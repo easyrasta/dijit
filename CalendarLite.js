@@ -171,7 +171,6 @@ define([
 			//      Fills in the calendar grid with each day (1-31)
 			// tags:
 			//      private
-
 			var month = new this.dateClassObj(this.currentFocus);
 			month.setDate(1);
 
@@ -247,6 +246,13 @@ define([
 			// set name of this month
 			this.monthWidget.set("month", month);
 
+			this.populateControls();
+		},
+		
+		populateControls: function(){
+			var month = new this.dateClassObj(this.currentFocus);
+			month.setDate(1);
+			
 			// Fill in localized prev/current/next years
 			var y = month.getFullYear() - 1;
 			var d = new this.dateClassObj();
@@ -310,18 +316,23 @@ define([
 
 			this.set('currentFocus', dateObj, false);	// draw the grid to the month specified by currentFocus
 
+			this.buildControls();
+		},
+		
+		buildControls: function(){
 			// Set up connects for increment/decrement of months/years
 			var connect = lang.hitch(this, function(nodeProp, part, amount){
 				this.connect(this[nodeProp], "onclick", function(){
 					this._setCurrentFocusAttr(this.dateFuncObj.add(this.currentFocus, part, amount));
 				});
 			});
-			connect("incrementMonth", "month", 1);
+			
+		  	connect("incrementMonth", "month", 1);
 			connect("decrementMonth", "month", -1);
 			connect("nextYearLabelNode", "year", 1);
 			connect("previousYearLabelNode", "year", -1);
 		},
-
+		
 		_setCurrentFocusAttr: function(/*Date*/ date, /*Boolean*/ forceFocus){
 			// summary:
 			//		If the calendar currently has focus, then focuses specified date,
@@ -330,7 +341,6 @@ define([
 			//		displayed month/year, and sets the cell that will get focus.
 			// forceFocus:
 			//		If true, will focus() the cell even if calendar itself doesn't have focus
-
 			var oldFocus = this.currentFocus,
 				oldCell = oldFocus && this._date2cell ? this._date2cell[oldFocus.valueOf()] : null;
 
