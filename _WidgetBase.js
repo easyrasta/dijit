@@ -285,7 +285,7 @@ return declare("dijit._WidgetBase", Stateful, {
 		//			  tree
 		// description:
 		//		Create calls a number of widget methods (postMixInProperties, buildRendering, postCreate,
-		//		etc.), some of which of you'll want to override. See http://docs.dojocampus.org/dijit/_Widget
+		//		etc.), some of which of you'll want to override. See http://dojotoolkit.org/reference-guide/dijit/_WidgetBase.html
 		//		for a discussion of the widget creation lifecycle.
 		//
 		//		Of course, adventurous developers could override create entirely, but this should
@@ -618,7 +618,9 @@ return declare("dijit._WidgetBase", Stateful, {
 		//		If commands isn't specified then it's looked up from attributeMap.
 		//		Note some attributes like "type"
 		//		cannot be processed this way as they are not mutable.
-		//
+		// attr:
+		//		Name of member variable (ex: "focusNode" maps to this.focusNode) pointing
+		//		to DOMNode inside the widget, or alternately pointing to a subwidget
 		// tags:
 		//		private
 
@@ -642,7 +644,14 @@ return declare("dijit._WidgetBase", Stateful, {
 					var attrName = command.attribute ? command.attribute :
 						(/^on[A-Z][a-zA-Z]*$/.test(attr) ? attr.toLowerCase() : attr);
 
-					domAttr.set(mapNode, attrName, value);
+					if(mapNode.tagName){
+						// Normal case, mapping to a DOMNode.  Note that modern browsers will have a mapNode.set()
+						// method, but for consistency we still call domAttr
+						domAttr.set(mapNode, attrName, value);
+					}else{
+						// mapping to a sub-widget
+						mapNode.set(attrName, value);
+					}
 					break;
 				case "innerText":
 					mapNode.innerHTML = "";
@@ -716,7 +725,7 @@ return declare("dijit._WidgetBase", Stateful, {
 			// use the explicit setter
 			var result = setter.apply(this, Array.prototype.slice.call(arguments, 1));
 		}else{
-			// Mapping from widget attribute to DOMNode attribute/value/etc.
+			// Mapping from widget attribute to DOMNode/subwidget attribute/value/etc.
 			// Map according to:
 			//		1. attributeMap setting, if one exists (TODO: attributeMap deprecated, remove in 2.0)
 			//		2. _setFooAttr: {...} type attribute in the widget (if one exists)
