@@ -68,7 +68,12 @@ var _FontDropDown = declare("dijit._editor.plugins._FontDropDown",
 
 		// Set some substitution variables used in the template
 		this.label = this.strings[this.command];
-		this.id = registry.getUniqueId(this.declaredClass.replace(/\./g,"_"));	// TODO: unneeded??
+
+		// _WidgetBase sets the id after postMixInProperties(), but we need it now.
+		// Alternative is to have a buildRendering() method and move this.selectId setting there,
+		// or alternately get rid of selectId variable and just access ${id} in template?
+		this.id = registry.getUniqueId(this.declaredClass.replace(/\./g,"_"));
+
 		this.selectId = this.id + "_select";	// used in template
 
 		this.inherited(arguments);
@@ -147,7 +152,7 @@ var _FontNameDropDown = declare("dijit._editor.plugins._FontNameDropDown", _Font
 	// summary:
 	//		Dropdown to select a font; goes in editor toolbar.
 
-	// generic: Boolean
+	// generic: [const] Boolean
 	//		Use generic (web standard) font names
 	generic: false,
 
@@ -448,10 +453,10 @@ var FontChoice = declare("dijit._editor.plugins.FontChoice", _Plugin,{
 	//		It is possible to override the default dropdown list by providing an Array for the `custom` property when
 	//		instantiating this plugin, e.g.
 	//
-	//	|	plugins="[{name:'dijit._editor.plugins.FontChoice', command:'fontName', custom:['Verdana','Myriad','Garamond']},...]"
+	//	|	plugins="[{name:'dijit._editor.plugins.FontChoice', command:'fontName', values:['Verdana','Myriad','Garamond']},...]"
 	//
 	//		Alternatively, for `fontName` only, `generic:true` may be specified to provide a dropdown with
-	//		[CSS generic font families](http://www.w3.org/TR/REC-CSS2/fonts.html#generic-font-families)
+	//		[CSS generic font families](http://www.w3.org/TR/REC-CSS2/fonts.html#generic-font-families).
 	//
 	//		Note that the editor is often unable to properly handle font styling information defined outside
 	//		the context of the current editor instance, such as pre-populated HTML.
@@ -477,7 +482,7 @@ var FontChoice = declare("dijit._editor.plugins.FontChoice", _Plugin,{
 		params = this.params;
 
 		// For back-compat reasons support setting custom values via "custom" parameter
-		// rather than "values" parameter
+		// rather than "values" parameter.   Remove in 2.0.
 		if(this.params.custom){
 			params.values = this.params.custom;
 		}

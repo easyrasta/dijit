@@ -5,6 +5,7 @@ define([
 	"dojo/keys", // keys.ENTER
 	"dojo/_base/lang", // lang.delegate lang.hitch lang.trim
 	"dojo/_base/sniff", // has("ie")
+	"dojo/_base/query", // query
 	"dojo/string", // string.substitute
 	"dojo/_base/window", // win.withGlobal
 	"../../_Widget",
@@ -12,7 +13,7 @@ define([
 	"../../form/DropDownButton",
 	"../range",
 	"../selection"
-], function(require, declare, domAttr, keys, lang, has, string, win,
+], function(require, declare, domAttr, keys, lang, has, query, string, win,
 	_Widget, _Plugin, DropDownButton, rangeapi, selectionapi){
 
 /*=====
@@ -63,11 +64,11 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 
 	// _hostRxp [private] RegExp
 	//		Regular expression used to validate url fragments (ip address, hostname, etc)
-	_hostRxp:  new RegExp("^((([^\\[:]+):)?([^@]+)@)?(\\[([^\\]]+)\\]|([^\\[:]*))(:([0-9]+))?$"),
+	_hostRxp: /^((([^\[:]+):)?([^@]+)@)?(\[([^\]]+)\]|([^\[:]*))(:([0-9]+))?$/,
 
 	// _userAtRxp [private] RegExp
 	//		Regular expression used to validate e-mail address fragment.
-	_userAtRxp: new RegExp("^([!#-'*+\\-\\/-9=?A-Z^-~]+[.])*[!#-'*+\\-\\/-9=?A-Z^-~]+@", "i"),
+	_userAtRxp: /^([!#-'*+\-\/-9=?A-Z^-~]+[.])*[!#-'*+\-\/-9=?A-Z^-~]+@/i,
 
 	// linkDialogTemplate: [protected] String
 	//		Template for contents of TooltipDialog to pick URL
@@ -304,6 +305,18 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 		args = this._checkValues(args);
 		this.editor.execCommand('inserthtml',
 			string.substitute(this.htmlTemplate, args));
+
+		// IE sometimes leaves a blank link, so we need to fix it up.
+		// Go ahead and do this for everyone just to avoid blank links
+		// in the page.
+		query("a", this.editor.document).forEach(function(a){
+			if(!a.innerHTML && !domAttr.has(a, "name")){
+				// Remove empty anchors that do not have "name" set.
+				// Empty ones with a name set could be a hidden hash
+				// anchor.
+				a.parentNode.removeChild(a);
+			}
+		}, this);
 	},
 
 	_onCloseDialog: function(){
@@ -335,8 +348,8 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 		// summary:
 		//		Handler for when the dialog is opened.
 		//		If the caret is currently in a URL then populate the URL's info into the dialog.
-		var a;
-		if(has("ie") < 9){
+		var a,b,fc;
+		if(has("ie")){
 			// IE is difficult to select the element in, using the range unified
 			// API seems to work reasonably well.
 			var sel = rangeapi.getSelection(this.editor.window);
@@ -353,6 +366,29 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 				// and thus considered a control.
 				a = win.withGlobal(this.editor.window,
 					"getSelectedElement", selectionapi, [this.tag]);
+			}
+			if(!a || (a.nodeName && a.nodeName.toLowerCase() !== this.tag)){
+				// Try another lookup, IE's selection is just terrible.
+				b = win.withGlobal(this.editor.window,
+				"getAncestorElement", selectionapi, [this.tag]);
+				if(b && (b.nodeName && b.nodeName.toLowerCase() == this.tag)){
+					// Looks like we found an A tag, use it and make sure just it is 
+					// selected.
+					a = b;
+					win.withGlobal(this.editor.window,
+						"selectElement", selectionapi, [a]);
+				}else if (range.startContainer === range.endContainer){
+					// STILL nothing.  Trying one more thing.  Lets look at the first child.  
+					// It might be an anchor tag in a div by itself or the like.  If it is, 
+					// we'll use it otherwise we give up.  The selection is not easily 
+					// determinable to be on an existing anchor tag.
+					fc = range.startContainer.firstChild;
+					if(fc && (fc.nodeName && fc.nodeName.toLowerCase() == this.tag)){
+						a = fc;
+						win.withGlobal(this.editor.window,
+							"selectElement", selectionapi, [a]);
+					}
+				}
 			}
 		}else{
 			a = win.withGlobal(this.editor.window,
@@ -376,20 +412,36 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 			var t = e.target;
 			var tg = t.tagName? t.tagName.toLowerCase() : "";
 			if(tg === this.tag && domAttr.get(t,"href")){
-				win.withGlobal(this.editor.window,
+				var editor = this.editor;
+
+				win.withGlobal(editor.window,
 					 "selectElement",
 					 selectionapi, [t]);
-				this.editor.onDisplayChanged();
 
-				setTimeout(lang.hitch(this, function(){
+				editor.onDisplayChanged();
+
+				// Call onNormalizedDisplayChange() now, rather than on timer.
+				// On IE, when focus goes to the first <input> in the TooltipDialog, the editor loses it's selection.
+				// Later if onNormalizedDisplayChange() gets called via the timer it will disable the LinkDialog button
+				// (actually, all the toolbar buttons), at which point clicking the <input> will close the dialog,
+				// since (for unknown reasons) focus.js ignores disabled controls.
+				if(editor._updateTimer){
+					clearTimeout(editor._updateTimer);
+					delete editor._updateTimer;
+				}
+				editor.onNormalizedDisplayChanged();
+
+				var button = this.button;
+				setTimeout(function(){
 					// Focus shift outside the event handler.
 					// IE doesn't like focus changes in event handles.
-					this.button.set("disabled", false);
-					this.button.openDropDown();
-					if(this.button.dropDown.focus){
-						this.button.dropDown.focus();
-					}
-				}), 10);
+					button.set("disabled", false);
+					button.loadAndOpenDropDown().then(function(){
+						if(button.dropDown.focus){
+							button.dropDown.focus();
+						}
+					});
+				}, 10);
 			}
 		}
 	}
@@ -519,21 +571,37 @@ var ImgLinkDialog = declare("dijit._editor.plugins.ImgLinkDialog", [LinkDialog],
 		//		protected.
 		if(e && e.target){
 			var t = e.target;
-			var tg = t.tagName? t.tagName.toLowerCase() : "";
+			var tg = t.tagName ? t.tagName.toLowerCase() : "";
 			if(tg === this.tag && domAttr.get(t,"src")){
-				win.withGlobal(this.editor.window,
+				var editor = this.editor;
+
+				win.withGlobal(editor.window,
 					 "selectElement",
 					 selectionapi, [t]);
-				this.editor.onDisplayChanged();
-				setTimeout(lang.hitch(this, function(){
+				editor.onDisplayChanged();
+
+				// Call onNormalizedDisplayChange() now, rather than on timer.
+				// On IE, when focus goes to the first <input> in the TooltipDialog, the editor loses it's selection.
+				// Later if onNormalizedDisplayChange() gets called via the timer it will disable the LinkDialog button
+				// (actually, all the toolbar buttons), at which point clicking the <input> will close the dialog,
+				// since (for unknown reasons) focus.js ignores disabled controls.
+				if(editor._updateTimer){
+					clearTimeout(editor._updateTimer);
+					delete editor._updateTimer;
+				}
+				editor.onNormalizedDisplayChanged();
+
+				var button = this.button;
+				setTimeout(function(){
 					// Focus shift outside the event handler.
 					// IE doesn't like focus changes in event handles.
-					this.button.set("disabled", false);
-					this.button.openDropDown();
-					if(this.button.dropDown.focus){
-						this.button.dropDown.focus();
-					}
-				}), 10);
+					button.set("disabled", false);
+					button.loadAndOpenDropDown().then(function(){
+						if(button.dropDown.focus){
+							button.dropDown.focus();
+						}
+					});
+				}, 10);
 			}
 		}
 	}
