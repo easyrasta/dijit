@@ -127,18 +127,13 @@ define([
 			if(typeof value == "string"){
 				value = stamp.fromISOString(value);
 			}
-			if(value){
-				// convert from Number to Date, or make copy of Date object so that setHours() call below
-				// doesn't affect original value
-				value = new this.dateClassObj(value);
-			}
+			value = this._patchDate(value);
 			if(this._isValidDate(value)){
 				// Try to avoid re-rendering when new value is the same as old value, but be careful
 				// during initialization when this.value == value even though the grid hasn't been rendered yet.
-				if(!this._created || !this._isValidDate(this.value) || this.dateFuncObj.compare(value, this.value)){
-					value.setHours(1, 0, 0, 0); // round to nearest day (1am to avoid issues when DST shift occurs at midnight, see #8521, #9366)
-
+				if(!this._created || this.dateFuncObj.compare(value, this.value)){
 					if(!this.isDisabledDate(value, this.lang)){
+						var oldValue = this.get('value');
 						this._set("value", value);
 
 						// Set focus cell to the new value.   Arguably this should only happen when there isn't a current
@@ -147,7 +142,7 @@ define([
 						this.set("currentFocus", value);
 
 						if(this._created && (priorityChange || typeof priorityChange == "undefined")){
-							this.onChange(this.get('value'));
+							this._onChange(oldValue, this.get('value'));
 						}
 					}
 				}
@@ -157,6 +152,17 @@ define([
 				this.set("currentFocus", this.currentFocus);
 			}
 		},
+
+		_patchDate: function(value){
+			if(value){
+				// convert from Number to Date, or make copy of Date object so that setHours() call below
+				// doesn't affect original value
+				value = new this.dateClassObj(value);
+				value.setHours(1, 0, 0, 0);
+			}
+			return value;
+		},
+
 
 		_setText: function(node, text){
 			// summary:
@@ -191,9 +197,12 @@ define([
 			// Iterate through dates in the calendar and fill in date numbers and style info
 			array.forEach(this.dateCells, function(template, idx){
 				var i = idx + dayOffset;
+				
 				var date = new this.dateClassObj(month),
 					number, clazz = "dijitCalendar", adj = 0;
-
+			
+				template.className = "";
+				
 				if(i < firstDay){
 					number = daysInPreviousMonth - firstDay + i + 1;
 					adj = -1;
@@ -206,38 +215,27 @@ define([
 					number = i - firstDay + 1;
 					clazz += "Current";
 				}
-
+				
 				if(adj){
 					date = this.dateFuncObj.add(date, "month", adj);
 				}
 				date.setDate(number);
-
-				if(!this.dateFuncObj.compare(date, today, "date")){
-					clazz = "dijitCalendarCurrentDate " + clazz;
-				}
-
-				if(this._isSelectedDate(date, this.lang)){
-					clazz = "dijitCalendarSelectedDate " + clazz;
-					template.setAttribute("aria-selected", "true");
-				}else{
-					template.setAttribute("aria-selected", "false");
-				}
-
-				if(this.isDisabledDate(date, this.lang)){
-					clazz = "dijitCalendarDisabledDate " + clazz;
-					template.setAttribute("aria-disabled", "true");
-				}else{
-					clazz = "dijitCalendarEnabledDate " + clazz;
-					template.removeAttribute("aria-disabled");
-				}
-
+				
 				var clazz2 = this.getClassForDate(date, this.lang);
 				if(clazz2){
-					clazz = clazz2 + " " + clazz;
+					domClass.add(template, clazz2);
 				}
-
-				template.className = clazz + "Month dijitCalendarDateTemplate";
-
+				
+				this.disableDate(date, template);
+				
+				if(!this.dateFuncObj.compare(date, today, "date")){
+					domClass.add(template,  "dijitCalendarCurrentDate ");
+				}
+				
+				domClass.add(template, clazz + "Month dijitCalendarDateTemplate");
+				
+				this.toggleDate(date, template);
+				
 				// Each cell has an associated integer value representing it's date
 				var dateVal = date.valueOf();
 				this._date2cell[dateVal] = template;
@@ -246,7 +244,6 @@ define([
 				// Set Date string (ex: "13").
 				this._setText(this.dateLabels[idx], date.getDateLocalized ? date.getDateLocalized(this.lang) : date.getDate());
 			}, this);
-
 		},
 		
 		_populateControls: function(){
@@ -268,6 +265,7 @@ define([
 				this._setText(this[name+"YearLabelNode"],
 					this.dateLocaleModule.format(d, {selector:'year', locale:this.lang}));
 			}, this);
+			
 		},
 
 		goToToday: function(){
@@ -341,7 +339,7 @@ define([
 				});
 			});
 			
-		  	connect("incrementMonth", "month", 1);
+			connect("incrementMonth", "month", 1);
 			connect("decrementMonth", "month", -1);
 			connect("nextYearLabelNode", "year", 1);
 			connect("previousYearLabelNode", "year", -1);
@@ -358,16 +356,15 @@ define([
 			var oldFocus = this.currentFocus,
 				oldCell = oldFocus && this._date2cell ? this._date2cell[oldFocus.valueOf()] : null;
 
-			// round specified value to nearest day (1am to avoid issues when DST shift occurs at midnight, see #8521, #9366)
-			date = new this.dateClassObj(date);
-			date.setHours(1, 0, 0, 0);
+			date = this._patchDate(date);
 
 			this._set("currentFocus", date);
 
-			// TODO: only re-populate grid when month/year has changed
-			this._populateGrid();
-			this._populateControls();
-
+			if(!this._date2cell || this.datePackage.difference(oldFocus, date, "month") !=0){ 
+				this._populateGrid();
+				this._populateControls();
+			}
+			
 			// set tabIndex=0 on new cell, and focus it (but only if Calendar itself is focused)
 			var newCell = this._date2cell[date.valueOf()];
 			newCell.setAttribute("tabIndex", this.tabIndex);
@@ -402,12 +399,71 @@ define([
 				this.set('value', node.dijitDateValue);
 			}
 		},
+		
+		disableDate: function(value, template){
+			if(this.isDisabledDate(value, this.lang)){
+				domClass.add(template, "dijitCalendarDisabledDate ");
+				template.setAttribute("aria-disabled", "true");
+			}else{
+				domClass.add(template, "dijitCalendarEnabledDate ");
+				template.removeAttribute("aria-disabled");
+			}
 
+		},
+		
+		_getNodeByDate : function(value){
+			value = this._patchDate(value);
+			return value && this._date2cell ? this._date2cell[value.valueOf()]: null;
+		},
+		
+		toggleDate: function(value, cell){
+			cell = cell || this._getNodeByDate(value);
+			if(this._isSelectedDate(value, this.lang)){
+				this.unselectNode(cell);
+			}else if(domClass.contains(cell, "dijitCalendarSelectedDate")){
+				this.selectNode(cell);
+			}
+		},
+		
+		selectDate: function(value){
+			this.selectNode(this._getNodeByDate(value));
+		},
+		
+		selectNode: function(cell){
+			if(cell){
+				domClass.add(cell, "dijitCalendarSelectedDate");
+				cell.setAttribute("aria-selected", "true");
+			}
+		},
+		
+		unselectDate: function(value){
+			this.unselectNode(this._getNodeByDate(value));
+		},
+		
+		unselectNode: function(cell){
+			if(cell){
+				domClass.remove(cell, "dijitCalendarSelectedDate");
+				cell.setAttribute("aria-selected", "false");
+			}
+		},
+		
+		_onChange: function(oldValue, newValue){
+			// summary:
+			//		Called only when the selected date has changed - Update selected date.
+			this.unselectDate(oldValue);
+			this.selectDate(newValue);
+			
+			this.onChange(newValue);
+		},
+		
 		onChange: function(/*Date*/ /*===== date =====*/){
 			// summary:
 			//		Called only when the selected date has changed
 		},
 
+		_isToday: function(value){
+			return !this.dateFuncObj.compare(value, today, "date");
+		},
 		_isSelectedDate: function(dateObject /*===== , locale =====*/){
 			// summary:
 			//		Extension point so developers can subclass Calendar to
