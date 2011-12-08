@@ -127,13 +127,15 @@ define([
 			if(typeof value == "string"){
 				value = stamp.fromISOString(value);
 			}
+			
 			value = this._patchDate(value);
+			var oldValue = this.get('value');
 			if(this._isValidDate(value)){
 				// Try to avoid re-rendering when new value is the same as old value, but be careful
 				// during initialization when this.value == value even though the grid hasn't been rendered yet.
-				if(!this._created || this.dateFuncObj.compare(value, this.value)){
+				if(!this._created || !this.value || this.datePackage.difference(value, this._patchDate(this.value), "day") != 0){
 					if(!this.isDisabledDate(value, this.lang)){
-						var oldValue = this.get('value');
+						
 						this._set("value", value);
 
 						// Set focus cell to the new value.   Arguably this should only happen when there isn't a current
@@ -141,14 +143,17 @@ define([
 						// new month/year).
 						this.set("currentFocus", value);
 
-						if(this._created && (priorityChange || typeof priorityChange == "undefined")){
-							this._onChange(oldValue, this.get('value'));
-						}
+						this._onChange(oldValue, this.get('value'));
+//						
+//						if(this._created && (priorityChange || typeof priorityChange == "undefined")){
+//							this._onChange(oldValue, this.get('value'));
+//						}
 					}
 				}
 			}else{
 				// clear value, and repopulate grid (to deselect the previously selected day) without changing currentFocus
 				this._set("value", null);
+				this.toggleDate(oldValue);
 				this.set("currentFocus", this.currentFocus);
 			}
 		},
@@ -200,7 +205,7 @@ define([
 				
 				var date = new this.dateClassObj(month),
 					number, clazz = "dijitCalendar", adj = 0;
-			
+				
 				template.className = "";
 				
 				if(i < firstDay){
@@ -419,9 +424,9 @@ define([
 		toggleDate: function(value, cell){
 			cell = cell || this._getNodeByDate(value);
 			if(this._isSelectedDate(value, this.lang)){
-				this.unselectNode(cell);
-			}else if(domClass.contains(cell, "dijitCalendarSelectedDate")){
 				this.selectNode(cell);
+			}else{
+				this.unselectNode(cell);
 			}
 		},
 		
@@ -431,8 +436,12 @@ define([
 		
 		selectNode: function(cell){
 			if(cell){
-				domClass.add(cell, "dijitCalendarSelectedDate");
-				cell.setAttribute("aria-selected", "true");
+				if(!domClass.contains(cell, "dijitCalendarSelectedDate")){
+					domClass.add(cell, "dijitCalendarSelectedDate");
+				}
+				if(this._started){
+					cell.setAttribute("aria-selected", "true");
+				}
 			}
 		},
 		
@@ -442,7 +451,9 @@ define([
 		
 		unselectNode: function(cell){
 			if(cell){
-				domClass.remove(cell, "dijitCalendarSelectedDate");
+				if(domClass.contains(cell, "dijitCalendarSelectedDate")){
+					domClass.remove(cell, "dijitCalendarSelectedDate");
+				}
 				cell.setAttribute("aria-selected", "false");
 			}
 		},
@@ -450,9 +461,9 @@ define([
 		_onChange: function(oldValue, newValue){
 			// summary:
 			//		Called only when the selected date has changed - Update selected date.
-			this.unselectDate(oldValue);
-			this.selectDate(newValue);
-			
+			this.toggleDate(oldValue);
+			this.toggleDate(newValue);
+
 			this.onChange(newValue);
 		},
 		

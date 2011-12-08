@@ -245,6 +245,7 @@
 
 							// Initial conditions
 							doh.robot.sequence(d.getTestErrback(dojo.hitch(this, function(){
+								cal1.set("currentFocus", cal1.get("value"));
 								// 16th is selected
 								var selected = dojo.query(".dijitCalendarSelectedDate", cal1.domNode);
 								doh.is(1, selected.length, "one selected node");
