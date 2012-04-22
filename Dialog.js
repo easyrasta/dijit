@@ -16,8 +16,7 @@ define([
 	"dojo/on",
 	"dojo/ready",
 	"dojo/sniff", // has("ie") has("opera") has("dijit-legacy-requires")
-	"dojo/_base/window", // win.body
-	"dojo/window", // winUtils.getBox
+	"dojo/window", // winUtils.getBox, winUtils.get
 	"dojo/dnd/Moveable", // Moveable
 	"dojo/dnd/TimedMoveable", // TimedMoveable
 	"./focus",
@@ -33,7 +32,7 @@ define([
 	"./main",			// for back-compat, exporting dijit._underlay (remove in 2.0)
 	"dojo/i18n!./nls/common"
 ], function(require, array, connect, declare, Deferred,
-			dom, domClass, domGeometry, domStyle, event, fx, i18n, keys, lang, on, ready, has, win, winUtils,
+			dom, domClass, domGeometry, domStyle, event, fx, i18n, keys, lang, on, ready, has, winUtils,
 			Moveable, TimedMoveable, focus, manager, _Widget, _TemplatedMixin, _CssStateMixin, _FormMixin, _DialogMixin,
 			DialogUnderlay, ContentPane, template, dijit){
 	
@@ -169,7 +168,7 @@ define([
 				display: "none",
 				position:"absolute"
 			});
-			win.body().appendChild(this.domNode);
+			this.ownerDocumentBody.appendChild(this.domNode);
 
 			this.inherited(arguments);
 
@@ -228,7 +227,8 @@ define([
 
 			this.underlayAttrs = {
 				dialogId: this.id,
-				"class": array.map(this["class"].split(/\s/), function(s){ return s+"_underlay"; }).join(" ")
+				"class": array.map(this["class"].split(/\s/), function(s){ return s+"_underlay"; }).join(" "),
+				ownerDocument: this.ownerDocument
 			};
 		},
 
@@ -296,7 +296,7 @@ define([
 			//		in the viewport has been determined (by dragging, for instance),
 			//		center the node. Otherwise, use the Dialog's stored relative offset,
 			//		and position the node to top: left: values based on the viewport.
-			if(!domClass.contains(win.body(), "dojoMove")){	// don't do anything if called during auto-scroll
+			if(!domClass.contains(this.ownerDocumentBody, "dojoMove")){	// don't do anything if called during auto-scroll
 				var node = this.domNode,
 					viewport = winUtils.getBox(),
 					p = this._relativePosition,
@@ -381,7 +381,10 @@ define([
 				this._fadeOutDeferred.cancel();
 			}
 
-			this._modalconnects.push(on(window, "scroll", lang.hitch(this, "resize")));
+			// Recenter Dialog if user scrolls browser.  Connecting to document doesn't work on IE, need to use window.
+			var win = winUtils.get(this.ownerDocument);
+			this._modalconnects.push(on(win, "scroll", lang.hitch(this, "resize")));
+
 			this._modalconnects.push(on(this.domNode, connect._keypress, lang.hitch(this, "_onKey")));
 
 			domStyle.set(this.domNode, {
@@ -574,18 +577,17 @@ define([
 
 				var pd = ds[ds.length-1];	// the new active dialog (or the base page itself)
 
-				// Adjust underlay
-				if(ds.length == 1){
-					// Returning to original page.
-					// Hide the underlay, unless the underlay widget has already been destroyed
-					// because we are being called during page unload (when all widgets are destroyed)
-					if(!dijit._underlay._destroyed){
+				// Adjust underlay, unless the underlay widget has already been destroyed
+				// because we are being called during page unload (when all widgets are destroyed)
+				if(!dijit._underlay._destroyed){
+					if(ds.length == 1){
+						// Returning to original page.  Hide the underlay.
 						dijit._underlay.hide();
+					}else{
+						// Popping back to previous dialog, adjust underlay.
+						domStyle.set(dijit._underlay.domNode, 'zIndex', pd.zIndex - 1);
+						dijit._underlay.set(pd.underlayAttrs);
 					}
-				}else{
-					// Popping back to previous dialog, adjust underlay
-					domStyle.set(dijit._underlay.domNode, 'zIndex', pd.zIndex - 1);
-					dijit._underlay.set(pd.underlayAttrs);
 				}
 
 				// Adjust focus
