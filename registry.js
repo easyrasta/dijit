@@ -1,9 +1,9 @@
 define([
 	"dojo/_base/array", // array.forEach array.map
-	"dojo/_base/sniff", // has("ie")
+	"dojo/sniff", // has("ie")
 	"dojo/_base/unload", // unload.addOnWindowUnload
 	"dojo/_base/window", // win.body
-	"."	// dijit._scopeName
+	"./main"	// dijit._scopeName
 ], function(array, has, unload, win, dijit){
 
 	// module:

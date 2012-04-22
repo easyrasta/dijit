@@ -59,9 +59,9 @@ define([
 
 		baseClass: "dijitTextBox dijitCurrencyTextBox",
 
-		// Override regExpGen ValidationTextBox.regExpGen().... we use a reg-ex generating function rather
-		// than a straight regexp to deal with locale  (plus formatting options too?)
-		regExpGen: function(constraints){
+		// Override pattern ValidationTextBox.pattern.... we use a reg-ex generating function rather
+		// than a straight regexp to deal with locale (plus formatting options too?)
+		pattern: function(constraints){
 			// if focused, accept either currency data or NumberTextBox format
 			return '(' + (this.focused ? this.inherited(arguments, [ lang.mixin({}, constraints, this.editOptions) ]) + '|' : '')
 				+ currency.regexp(constraints) + ')';
@@ -74,9 +74,9 @@ define([
 
 		parse: function(/*String*/ value, /*Object*/ constraints){
 			// summary:
-			// 		Parses string value as a Currency, according to the constraints object
+			//		Parses string value as a Currency, according to the constraints object
 			// tags:
-			// 		protected extension
+			//		protected extension
 			var v = this.inherited(arguments);
 			if(isNaN(v) && /\d+/.test(value)){ // currency parse failed, but it could be because they are using NumberTextBox format so try its parse
 				v = lang.hitch(lang.mixin({}, this, { _parser: NumberTextBox.prototype._parser }), "inherited")(arguments);

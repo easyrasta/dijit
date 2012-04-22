@@ -54,9 +54,9 @@ define([
 		constraints: {},
 		======*/
 
-		// Override ValidationTextBox.regExpGen().... we use a reg-ex generating function rather
+		// Override ValidationTextBox.pattern.... we use a reg-ex generating function rather
 		// than a straight regexp to deal with locale  (plus formatting options too?)
-		regExpGen: locale.regexp,
+		pattern: locale.regexp,
 
 		// datePackage: String
 		//		JavaScript namespace to find calendar routines.	 Uses Gregorian calendar routines
@@ -134,7 +134,7 @@ define([
 				this.datePackage;
 			this.dateClassObj = this.dateFuncObj.Date || Date;
 			this.dateLocaleModule = lang.getObject("locale", false, this.dateFuncObj);
-			this.regExpGen = this.dateLocaleModule.regexp;
+			this._set('pattern', this.dateLocaleModule.regexp);
 			this._invalidDate = this.constructor.prototype.value.toString();
 		},
 
@@ -158,7 +158,7 @@ define([
 			constraints.fullYear = true; // see #5465 - always format with 4-digit years
 			var fromISO = stamp.fromISOString;
 			if(typeof constraints.min == "string"){ constraints.min = fromISO(constraints.min); }
- 			if(typeof constraints.max == "string"){ constraints.max = fromISO(constraints.max); }
+			if(typeof constraints.max == "string"){ constraints.max = fromISO(constraints.max); }
 			this.inherited(arguments);
 		},
 
@@ -185,6 +185,9 @@ define([
 				}
 			}
 			this.inherited(arguments);
+			if(this.value instanceof Date){
+				this.filterString = "";
+			}
 			if(this.dropDown){
 				this.dropDown.set('value', value, false);
 			}
@@ -201,8 +204,8 @@ define([
 		_setDropDownDefaultValueAttr: function(/*Date*/ val){
 			if(this._isInvalidDate(val)){
 				// convert null setting into today's date, since there needs to be *some* default at all times.
-				 val = new this.dateClassObj()
-						}
+				 val = new this.dateClassObj();
+			}
 			this.dropDownDefaultValue = val;
 		},
 
@@ -217,7 +220,7 @@ define([
 			this.dropDown = new PopupProto({
 				onChange: function(value){
 					// this will cause InlineEditBox and other handlers to do stuff so make sure it's last
-					_DateTimeTextBox.superclass._setValueAttr.call(textBox, value, true);
+					textBox.set('value', value, true);
 				},
 				id: this.id + "_popup",
 				dir: textBox.dir,
@@ -231,7 +234,7 @@ define([
 
 					isDisabledDate: function(/*Date*/ date){
 						// summary:
-						// 	disables dates outside of the min/max of the _DateTimeTextBox
+						//	disables dates outside of the min/max of the _DateTimeTextBox
 						return !textBox.rangeCheck(date, textBox.constraints);
 					}
 				});

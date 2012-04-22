@@ -43,8 +43,8 @@ var _Splitter = declare("dijit.layout._Splitter", [_Widget, _TemplatedMixin ],
 	//		private
 
 /*=====
- 	// container: [const] dijit.layout.BorderContainer
- 	//		Pointer to the parent BorderContainer
+	// container: [const] dijit.layout.BorderContainer
+	//		Pointer to the parent BorderContainer
 	container: null,
 
 	// child: [const] dijit.layout._LayoutWidget
@@ -225,7 +225,7 @@ var _Splitter = declare("dijit.layout._Splitter", [_Widget, _TemplatedMixin ],
 var _Gutter = declare("dijit.layout._Gutter", [_Widget, _TemplatedMixin],
 {
 	// summary:
-	// 		Just a spacer div to separate side pane from center pane.
+	//		Just a spacer div to separate side pane from center pane.
 	//		Basically a trick to lookup the gutter/splitter width from the theme.
 	// description:
 	//		Instantiated by `dijit.layout.BorderContainer`.  Users should not
@@ -268,11 +268,11 @@ var BorderContainer = declare("dijit.layout.BorderContainer", _LayoutWidget, {
 	//		and which child is closer to the center (high layoutPriority).   layoutPriority can also be used
 	//		instead of the design attribute to control layout precedence of horizontal vs. vertical panes.
 	// example:
-	// |	<div data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design: 'sidebar', gutters: false"
+	// |	<div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design: 'sidebar', gutters: false"
 	// |            style="width: 400px; height: 300px;">
-	// |		<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'top'">header text</div>
-	// |		<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'right', splitter: true" style="width: 200px;">table of contents</div>
-	// |		<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region: 'center'">client area</div>
+	// |		<div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region: 'top'">header text</div>
+	// |		<div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region: 'right', splitter: true" style="width: 200px;">table of contents</div>
+	// |		<div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region: 'center'">client area</div>
 	// |	</div>
 
 	// design: String
@@ -299,7 +299,7 @@ var BorderContainer = declare("dijit.layout.BorderContainer", _LayoutWidget, {
 	baseClass: "dijitBorderContainer",
 
 	// _splitterClass: Function||String
-	// 		Optional hook to override the default Splitter widget used by BorderContainer
+	//		Optional hook to override the default Splitter widget used by BorderContainer
 	_splitterClass: _Splitter,
 
 	postMixInProperties: function(){

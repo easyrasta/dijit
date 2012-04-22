@@ -40,9 +40,9 @@ define([
 		// tags:
 		//		protected
 
-		// Override ValidationTextBox.regExpGen().... we use a reg-ex generating function rather
+		// Override ValidationTextBox.pattern.... we use a reg-ex generating function rather
 		// than a straight regexp to deal with locale (plus formatting options too?)
-		regExpGen: number.regexp,
+		pattern: number.regexp,
 
 		/*=====
 		// constraints: dijit.form.NumberTextBox.__Constraints
@@ -178,7 +178,7 @@ define([
 			//		Otherwise it dispatches to the superclass's filter() method.
 			//
 			//		See `dijit.form.TextBox.filter` for more details.
-			return (value === null || value === '' || value === undefined) ? NaN : this.inherited(arguments); // set('value', null||''||undefined) should fire onChange(NaN)
+			return (value == null /* or undefined */ || value === '') ? NaN : this.inherited(arguments); // set('value', null||''||undefined) should fire onChange(NaN)
 		},
 
 		serialize: function(/*Number*/ value, /*Object?*/ options){

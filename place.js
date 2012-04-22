@@ -1,11 +1,11 @@
 define([
 	"dojo/_base/array", // array.forEach array.map array.some
-	"dojo/dom-geometry", // domGeometry.getMarginBox domGeometry.position
+	"dojo/dom-geometry", // domGeometry.position
 	"dojo/dom-style", // domStyle.getComputedStyle
 	"dojo/_base/kernel", // kernel.deprecated
 	"dojo/_base/window", // win.body
 	"dojo/window", // winUtils.getBox
-	"."	// dijit (defining dijit.place to match API doc)
+	"./main"	// dijit (defining dijit.place to match API doc)
 ], function(array, domGeometry, domStyle, kernel, win, winUtils, dijit){
 
 	// module:
@@ -83,7 +83,7 @@ define([
 				style.visibility = "hidden";
 				style.display = "";
 			}
-			var mb = domGeometry.getMarginBox(node);
+			var bb = domGeometry.position(node);
 			style.display = oldDisplay;
 			style.visibility = oldVis;
 
@@ -92,22 +92,22 @@ define([
 			var
 				startXpos = {
 					'L': pos.x,
-					'R': pos.x - mb.w,
-					'M': Math.max(view.l, Math.min(view.l + view.w, pos.x + (mb.w >> 1)) - mb.w) // M orientation is more flexible
+					'R': pos.x - bb.w,
+					'M': Math.max(view.l, Math.min(view.l + view.w, pos.x + (bb.w >> 1)) - bb.w) // M orientation is more flexible
 				}[corner.charAt(1)],
 				startYpos = {
 					'T': pos.y,
-					'B': pos.y - mb.h,
-					'M': Math.max(view.t, Math.min(view.t + view.h, pos.y + (mb.h >> 1)) - mb.h)
+					'B': pos.y - bb.h,
+					'M': Math.max(view.t, Math.min(view.t + view.h, pos.y + (bb.h >> 1)) - bb.h)
 				}[corner.charAt(0)],
 				startX = Math.max(view.l, startXpos),
 				startY = Math.max(view.t, startYpos),
-				endX = Math.min(view.l + view.w, startXpos + mb.w),
-				endY = Math.min(view.t + view.h, startYpos + mb.h),
+				endX = Math.min(view.l + view.w, startXpos + bb.w),
+				endY = Math.min(view.t + view.h, startYpos + bb.h),
 				width = endX - startX,
 				height = endY - startY;
 
-			overflow += (mb.w - width) + (mb.h - height);
+			overflow += (bb.w - width) + (bb.h - height);
 
 			if(best == null || overflow < best.overflow){
 				best = {
@@ -238,10 +238,16 @@ define([
 			//
 			// positions:
 			//		Ordered list of positions to try matching up.
-			//			* before: places drop down to the left of the anchor node/widget, or to the right in
-			//				the case of RTL scripts like Hebrew and Arabic
-			//			* after: places drop down to the right of the anchor node/widget, or to the left in
-			//				the case of RTL scripts like Hebrew and Arabic
+			//			* before: places drop down to the left of the anchor node/widget, or to the right in the case
+			//				of RTL scripts like Hebrew and Arabic; aligns either the top of the drop down
+			//				with the top of the anchor, or the bottom of the drop down with bottom of the anchor.
+			//			* after: places drop down to the right of the anchor node/widget, or to the left in the case
+			//				of RTL scripts like Hebrew and Arabic; aligns either the top of the drop down
+			//				with the top of the anchor, or the bottom of the drop down with bottom of the anchor.
+			//			* before-centered: centers drop down to the left of the anchor node/widget, or to the right
+			//				 in the case of RTL scripts like Hebrew and Arabic
+			//			* after-centered: centers drop down to the right of the anchor node/widget, or to the left
+			//				 in the case of RTL scripts like Hebrew and Arabic
 			//			* above-centered: drop down is centered above anchor node
 			//			* above: drop down goes above anchor node, left sides aligned
 			//			* above-alt: drop down goes above anchor node, right sides aligned
@@ -262,7 +268,7 @@ define([
 			//		This will try to position node such that node's top-left corner is at the same position
 			//		as the bottom left corner of the aroundNode (ie, put node below
 			//		aroundNode, with left edges aligned).	If that fails it will try to put
-			// 		the bottom-right corner of node where the top right corner of aroundNode is
+			//		the bottom-right corner of node where the top right corner of aroundNode is
 			//		(ie, put node above aroundNode, with right edges aligned)
 			//
 
@@ -323,11 +329,18 @@ define([
 					case "below-centered":
 						push("BM", "TM");
 						break;
+					case "after-centered":
+						ltr = !ltr;
+						// fall through
+					case "before-centered":
+						push(ltr ? "ML" : "MR", ltr ? "MR" : "ML");
+						break;
 					case "after":
 						ltr = !ltr;
 						// fall through
 					case "before":
-						push(ltr ? "ML" : "MR", ltr ? "MR" : "ML");
+						push(ltr ? "TL" : "TR", ltr ? "TR" : "TL");
+						push(ltr ? "BL" : "BR", ltr ? "BR" : "BL");
 						break;
 					case "below-alt":
 						ltr = !ltr;

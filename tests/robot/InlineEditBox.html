@@ -137,7 +137,7 @@
 							var inlineBox = dijit.byId("editable");
 							var initialOnChange = inlineBox._onChangeValue;
 							inlineBox.set("value", "");
-							moveAndClick(inlineBox.domNode);
+							inlineBox.edit();
 							doh.robot.typeKeys("editable", 1000, 1600);
 							doh.robot.keyPress(dojo.keys.TAB, 500, {});
 							doh.robot.keyPress(dojo.keys.TAB, 1500, {}); // wait more than 1 second to TAB
@@ -347,23 +347,42 @@
 							var d = new doh.Deferred();
 							var inlineBox = dijit.byId("inlineRTE");
 							var handler = inlineBox.connect(inlineBox, 'edit',
-								function(){
+								d.getTestErrback(function(){
 									inlineBox.disconnect(handler);
 									setTimeout(function(){
 										handler = inlineBox.connect(inlineBox, 'save',
-											function(){
+											d.getTestErrback(function(){
 												inlineBox.disconnect(handler);
 												setTimeout(d.getTestCallback(function(){
 													doh.t(isHidden(inlineBox.wrapperWidget), "editor widget should visible");
 													doh.t(inlineBox.get("value").indexOf('!start!') >= 0, "value changed");
 												}), 1000);
-											});
+											}));
 										doh.robot.typeKeys("!start!", 1, 1400);
 										var buttons = dojo.query(".saveButton", inlineBox.domNode.parentNode);
 										moveAndClick(buttons[buttons.length-1]);
 									}, 1000);
-								});
+								}));
 							moveAndClick(inlineBox.domNode);
+							return d;
+						}
+					}
+				]);
+
+				doh.register("positioning", [
+					{
+						name: "offscreen",
+						timeout: 4000,
+						runTest: function(){
+							var d = new doh.Deferred();
+							var inlineBox = dijit.byId("areaEditable");
+							inlineBox.edit();
+							moveAndClick("disableAreaEditable");
+							doh.robot.sequence(d.getTestCallback(function(){
+								doh.t(inlineBox.get("disabled"), "disabled");
+								inlineBox.set('disabled', false);
+								inlineBox.cancel();
+							}), 1000);
 							return d;
 						}
 					}

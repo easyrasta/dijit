@@ -7,7 +7,7 @@ define([
 	"dojo/dom-class", // domClass.add domClass.contains domClass.remove
 	"dojo/dom-geometry", // domGeometry.marginBox domGeometry.position
 	"dojo/dom-style", // domStyle.set
-	"dojo/has",
+	"dojo/sniff",	// has("ios")
 	"dojo/keys", // keys.DOWN_ARROW keys.ENTER keys.ESCAPE
 	"dojo/_base/lang", // lang.hitch lang.isFunction
 	"dojo/touch",
@@ -98,7 +98,7 @@ define([
 
 		// _stopClickEvents: Boolean
 		//		When set to false, the click events will not be stopped, in
-		//		case you want to use them in your subwidget
+		//		case you want to use them in your subclass
 		_stopClickEvents: true,
 
 		_onDropDownMouseDown: function(/*Event*/ e){
@@ -106,7 +106,11 @@ define([
 			//		Callback when the user mousedown's on the arrow icon
 			if(this.disabled || this.readOnly){ return; }
 
-			event.stop(e);
+			// Prevent default to stop things like text selection, but don't stop propogation, so that:
+			//		1. TimeTextBox etc. can focusthe <input> on mousedown
+			//		2. dropDownButtonActive class applied by _CssStateMixin (on button depress)
+			//		3. user defined onMouseDown handler fires
+			e.preventDefault();
 
 			this._docHandler = this.connect(win.doc, touch.release, "_onDropDownMouseUp");
 
@@ -164,20 +168,20 @@ define([
 			if(this._opened){
 				if(dropDown.focus && dropDown.autoFocus !== false){
 					// Focus the dropdown widget - do it on a delay so that we
-					// don't steal our own focus.
-					window.setTimeout(lang.hitch(dropDown, "focus"), 1);
+					// don't steal back focus from the dropdown.
+					this.defer(lang.hitch(dropDown, "focus"), 1);
 				}
 			}else{
 				// The drop down arrow icon probably can't receive focus, but widget itself should get focus.
-				// setTimeout() needed to make it work on IE (test DateTextBox)
-				setTimeout(lang.hitch(this, "focus"), 0);
+				// defer() needed to make it work on IE (test DateTextBox)
+				this.defer("focus");
 			}
 
 			if(has("ios")){
 				this._justGotMouseUp = true;
-				setTimeout(lang.hitch(this, function(){
+				this.defer(function(){
 					this._justGotMouseUp = false;
-				}), 0);
+				});
 			}
 		},
 
@@ -278,7 +282,7 @@ define([
 				this.toggleDropDown();
 				var d = this.dropDown;	// drop down may not exist until toggleDropDown() call
 				if(d && d.focus){
-					setTimeout(lang.hitch(d, "focus"), 1);
+					this.defer(lang.hitch(d, "focus"), 1);
 				}
 			}
 		},
@@ -468,14 +472,13 @@ define([
 				onClose: function(){
 					domAttr.set(self._popupStateNode, "popupActive", false);
 					domClass.remove(self._popupStateNode, "dijitHasDropDownOpen");
-					self._opened = false;
+					self._set("_opened", false);	// use set() because _CssStateMixin is watching
 				}
 			});
 			domAttr.set(this._popupStateNode, "popupActive", "true");
-			domClass.add(self._popupStateNode, "dijitHasDropDownOpen");
-			this._opened=true;
+			domClass.add(this._popupStateNode, "dijitHasDropDownOpen");
+			this._set("_opened", true);	// use set() because _CssStateMixin is watching
 
-			// TODO: set this.checked and call setStateClass(), to affect button look while drop down is shown
 			return retVal;
 		},
 

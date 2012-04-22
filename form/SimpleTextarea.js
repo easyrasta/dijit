@@ -1,7 +1,7 @@
 define([
 	"dojo/_base/declare", // declare
 	"dojo/dom-class", // domClass.add
-	"dojo/_base/sniff", // has("ie") has("opera")
+	"dojo/sniff", // has("ie") has("opera")
 	"dojo/_base/window", // win.doc.selection win.doc.selection.createRange
 	"./TextBox"
 ], function(declare, domClass, has, win, TextBox){
@@ -14,17 +14,17 @@ define([
 //		dijit/form/SimpleTextarea
 // summary:
 //		A simple textarea that degrades, and responds to
-// 		minimal LayoutContainer usage, and works with dijit.form.Form.
+//		minimal LayoutContainer usage, and works with dijit.form.Form.
 //		Doesn't automatically size according to input, like Textarea.
 
 return declare("dijit.form.SimpleTextarea", TextBox, {
 	// summary:
 	//		A simple textarea that degrades, and responds to
-	// 		minimal LayoutContainer usage, and works with dijit.form.Form.
+	//		minimal LayoutContainer usage, and works with dijit.form.Form.
 	//		Doesn't automatically size according to input, like Textarea.
 	//
 	// example:
-	//	|	<textarea data-dojo-type="dijit.form.SimpleTextarea" name="foo" value="bar" rows=30 cols=40></textarea>
+	//	|	<textarea data-dojo-type="dijit/form/SimpleTextarea" name="foo" value="bar" rows=30 cols=40></textarea>
 	//
 	// example:
 	//	|	new dijit.form.SimpleTextarea({ rows:20, cols:30 }, "foo");

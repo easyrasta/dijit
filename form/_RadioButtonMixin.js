@@ -12,11 +12,11 @@ define([
 	// module:
 	//		dijit/form/_RadioButtonMixin
 	// summary:
-	// 		Mixin to provide widget functionality for an HTML radio button
+	//		Mixin to provide widget functionality for an HTML radio button
 
 	return declare("dijit.form._RadioButtonMixin", null, {
 		// summary:
-		// 		Mixin to provide widget functionality for an HTML radio button
+		//		Mixin to provide widget functionality for an HTML radio button
 
 		// type: [private] String
 		//		type attribute on <input> node.
@@ -50,6 +50,10 @@ define([
 					}
 				}));
 			}
+		},
+
+		_getSubmitValue: function(/*String*/ value){
+			return value === null ? "on" : value;
 		},
 
 		_onClick: function(/*Event*/ e){

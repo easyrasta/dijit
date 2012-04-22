@@ -2,7 +2,7 @@ define([
 	"dojo/_base/declare", // declare
 	"dojo/i18n", // i18n.getLocalization
 	"dojo/_base/lang", // lang.hitch
-	"dojo/_base/sniff", // has("chrome") has("opera")
+	"dojo/sniff", // has("chrome") has("opera")
 	"../../focus",		// focus.focus()
 	"../_Plugin",
 	"../../form/Button",
@@ -51,7 +51,7 @@ var Print = declare("dijit._editor.plugins.Print",_Plugin,{
 
 		// Set up a check that we have a print function
 		// and disable button if we do not.
-		this.editor.onLoadDeferred.addCallback(
+		this.editor.onLoadDeferred.then(
 			lang.hitch(this, function(){
 				if(!this.editor.iframe.contentWindow["print"]){
 					this.button.set("disabled", true);

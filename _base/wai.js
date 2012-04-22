@@ -1,7 +1,7 @@
 define([
 	"dojo/dom-attr", // domAttr.attr
 	"dojo/_base/lang", // lang.mixin
-	"..",	// export symbols to dijit
+	"../main",	// export symbols to dijit
 	"../hccss"			// not using this module directly, but loading it sets CSS flag on <html>
 ], function(domAttr, lang, dijit){
 
@@ -19,8 +19,8 @@ define([
 			//		Determines if an element has a particular role.
 			// returns:
 			//		True if elem has the specific role attribute and false if not.
-			// 		For backwards compatibility if role parameter not provided,
-			// 		returns true if has a role
+			//		For backwards compatibility if role parameter not provided,
+			//		returns true if has a role
 			var waiRole = this.getWaiRole(elem);
 			return role ? (waiRole.indexOf(role) > -1) : (waiRole.length > 0);
 		},
@@ -46,7 +46,7 @@ define([
 		removeWaiRole: function(/*Element*/ elem, /*String*/ role){
 			// summary:
 			//		Removes the specified role from an element.
-			// 		Removes role attribute if no specific role provided (for backwards compat.)
+			//		Removes role attribute if no specific role provided (for backwards compat.)
 
 			var roleValue = domAttr.get(elem, "role");
 			if(!roleValue){ return; }

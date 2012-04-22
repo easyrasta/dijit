@@ -5,10 +5,9 @@ define([
 	"dojo/dom",			// dom.byId
 	"dojo/dom-attr", // domAttr.attr domAttr.has
 	"dojo/dom-style", // style.style
-	"dojo/_base/sniff", // has("ie")
-	"./_base/manager",	// manager._isElementShown
-	"."	// for exporting methods to dijit namespace
-], function(array, config, declare, dom, domAttr, domStyle, has, manager, dijit){
+	"dojo/sniff", // has("ie")
+	"./main"	// for exporting methods to dijit namespace
+], function(array, config, declare, dom, domAttr, domStyle, has, dijit){
 
 	// module:
 	//		dijit/a11y
@@ -115,7 +114,7 @@ define([
 				}
 
 				if(isTabNavigable(child)){
-					var tabindex = domAttr.get(child, "tabIndex");
+					var tabindex = +domAttr.get(child, "tabIndex");	// + to convert string --> number
 					if(!domAttr.has(child, "tabIndex") || tabindex == 0){
 						if(!first){
 							first = child;

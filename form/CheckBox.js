@@ -2,14 +2,14 @@ define([
 	"require",
 	"dojo/_base/declare", // declare
 	"dojo/dom-attr", // domAttr.set
-	"dojo/_base/kernel",
+	"dojo/has",		// has("dijit-legacy-requires")
 	"dojo/query", // query
 	"dojo/ready",
 	"./ToggleButton",
 	"./_CheckBoxMixin",
 	"dojo/text!./templates/CheckBox.html",
 	"dojo/NodeList-dom" // NodeList.addClass/removeClass
-], function(require, declare, domAttr, kernel, query, ready, ToggleButton, _CheckBoxMixin, template){
+], function(require, declare, domAttr, has, query, ready, ToggleButton, _CheckBoxMixin, template){
 
 /*=====
 	var ToggleButton = dijit.form.ToggleButton;
@@ -22,7 +22,7 @@ define([
 	//		Checkbox widget
 
 	// Back compat w/1.6, remove for 2.0
-	if(!kernel.isAsync){
+	if(has("dijit-legacy-requires")){
 		ready(0, function(){
 			var requires = ["dijit/form/RadioButton"];
 			require(requires);	// use indirection so modules not rolled into a build
@@ -31,7 +31,7 @@ define([
 
 	return declare("dijit.form.CheckBox", [ToggleButton, _CheckBoxMixin], {
 		// summary:
-		// 		Same as an HTML checkbox, but with fancy styling.
+		//		Same as an HTML checkbox, but with fancy styling.
 		//
 		// description:
 		//		User interacts with real html inputs.
@@ -62,14 +62,12 @@ define([
 			//		when passed a boolean, controls whether or not the CheckBox is checked.
 			//		If passed a string, changes the value attribute of the CheckBox (the one
 			//		specified as "value" when the CheckBox was constructed (ex: <input
-			//		data-dojo-type="dijit.CheckBox" value="chicken">)
+			//		data-dojo-type="dijit/CheckBox" value="chicken">)
 			//		widget.set('value', string) will check the checkbox and change the value to the
 			//		specified string
 			//		widget.set('value', boolean) will change the checked state.
 			if(typeof newValue == "string"){
-				newValue = newValue || "on";	// "on" to match browser native behavior when value unspecified
-				this._set("value", newValue);
-				domAttr.set(this.focusNode, 'value', newValue);
+				this.inherited(arguments);
 				newValue = true;
 			}
 			if(this._created){

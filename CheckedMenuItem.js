@@ -42,7 +42,7 @@ define([
 			//		callback
 		},
 
-		_onClick: function(/*Event*/ e){
+		_onClick: function(evt){
 			// summary:
 			//		Clicking this item just toggles its state
 			// tags:
@@ -51,7 +51,7 @@ define([
 				this.set("checked", !this.checked);
 				this.onChange(this.checked);
 			}
-			this.inherited(arguments);
+			this.onClick(evt);
 		}
 	});
 });

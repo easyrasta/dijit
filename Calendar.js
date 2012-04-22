@@ -9,13 +9,12 @@ define([
 	"dojo/_base/kernel", // kernel.deprecated
 	"dojo/keys", // keys
 	"dojo/_base/lang", // lang.hitch
-	"dojo/_base/sniff", // has("ie")
+	"dojo/sniff", // has("ie")
 	"./CalendarLite",
 	"./_Widget",
 	"./_CssStateMixin",
 	"./_TemplatedMixin",
-	"./form/DropDownButton",
-	"./hccss"	// not used directly, but sets CSS class on <body>
+	"./form/DropDownButton"
 ], function(array, date, local, declare, domAttr, domClass, event, kernel, keys, lang, has,
 			CalendarLite, _Widget, _CssStateMixin, _TemplatedMixin, DropDownButton){
 

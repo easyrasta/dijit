@@ -2,9 +2,9 @@ define([
 	"dojo/_base/array", // array.filter array.forEach array.indexOf array.some
 	"dojo/aspect", // aspect.before, aspect.after
 	"dojo/_base/declare", // declare
-	"dojo/_base/Deferred", // Deferred.when
-	"dojo/_base/lang" // lang.hitch
-], function(array, aspect, declare, Deferred, lang){
+	"dojo/_base/lang", // lang.hitch
+	"dojo/when"
+], function(array, aspect, declare, lang, when){
 
 	// module:
 	//		dijit/tree/ObjectStoreModel
@@ -30,7 +30,7 @@ define([
 		//		Get label for tree node from this attribute
 		labelAttr: "name",
 
-	 	// root: [readonly] dojo.store.Item
+		// root: [readonly] dojo.store.Item
 		//		Pointer to the root item (read only, not a parameter)
 		root: null,
 
@@ -71,11 +71,11 @@ define([
 				onItem(this.root);
 			}else{
 				var res;
-				Deferred.when(res = this.store.query(this.query),
+				when(res = this.store.query(this.query),
 					lang.hitch(this, function(items){
 						//console.log("queried root: ", res);
 						if(items.length != 1){
-							throw new Error("dijit.tree.TreeStoreModel: root query returned " + items.length +
+							throw new Error("dijit.tree.ObjectStoreModel: root query returned " + items.length +
 								" items, but must return exactly one");
 						}
 						this.root = items[0];
@@ -95,7 +95,7 @@ define([
 			}
 		},
 
-		mayHaveChildren: function(/*dojo.store.Item*/ item){
+		mayHaveChildren: function(/*dojo.store.Item*/ /*===== item =====*/){
 			// summary:
 			//		Tells if an item has or may have children.  Implementing logic here
 			//		avoids showing +/- expando icon for nodes that we know don't have children.
@@ -109,14 +109,14 @@ define([
 
 		getChildren: function(/*dojo.store.Item*/ parentItem, /*function(items)*/ onComplete, /*function*/ onError){
 			// summary:
-			// 		Calls onComplete() with array of child items of given parent item.
+			//		Calls onComplete() with array of child items of given parent item.
 
 			var id = this.store.getIdentity(parentItem);
 			if(this.childrenCache[id]){
-				Deferred.when(this.childrenCache[id], onComplete, onError);
+				when(this.childrenCache[id], onComplete, onError);
 				return;
 			}
-			Deferred.when(
+			when(
 				this.childrenCache[id] = this.store.getChildren(parentItem),
 				lang.hitch(this, function(children){
 					//console.log("queried children of " + id + ": ", children);
@@ -185,7 +185,7 @@ define([
 		},
 
 		pasteItem: function(/*Item*/ childItem, /*Item*/ oldParentItem, /*Item*/ newParentItem,
-		 			/*Boolean*/ bCopy, /*int?*/ insertIndex, /*Item*/ before){
+					/*Boolean*/ bCopy, /*int?*/ insertIndex, /*Item*/ before){
 			// summary:
 			//		Move or copy an item from one parent item to another.
 			//		Used in drag & drop

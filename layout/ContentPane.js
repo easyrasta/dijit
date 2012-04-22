@@ -2,6 +2,7 @@ define([
 	"dojo/_base/kernel", // kernel.deprecated
 	"dojo/_base/lang", // lang.mixin lang.delegate lang.hitch lang.isFunction lang.isObject
 	"../_Widget",
+	"../_Container",
 	"./_ContentPaneResizeMixin",
 	"dojo/string", // string.substitute
 	"dojo/html", // html._ContentSetter html._emptyNode
@@ -14,7 +15,7 @@ define([
 	"dojo/_base/window", // win.body win.doc.createDocumentFragment
 	"dojo/_base/xhr", // xhr.get
 	"dojo/i18n" // i18n.getLocalization
-], function(kernel, lang, _Widget, _ContentPaneResizeMixin, string, html, nlsLoading,
+], function(kernel, lang, _Widget, _Container, _ContentPaneResizeMixin, string, html, nlsLoading,
 	array, declare, Deferred, dom, domAttr, win, xhr, i18n){
 
 /*=====
@@ -29,7 +30,7 @@ define([
 //		or by uri.  Fragment may include widgets.
 
 
-return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
+return declare("dijit.layout.ContentPane", [_Widget, _Container, _ContentPaneResizeMixin], {
 	// summary:
 	//		A widget containing an HTML fragment, specified inline
 	//		or by uri.  Fragment may include widgets.
@@ -125,12 +126,12 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 
 	// ioArgs: Object
 	//		Parameters to pass to xhrGet() request, for example:
-	// |	<div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="href: './bar', ioArgs: {timeout: 500}">
+	// |	<div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="href: './bar', ioArgs: {timeout: 500}">
 	ioArgs: {},
 
 	// onLoadDeferred: [readonly] dojo.Deferred
 	//		This is the `dojo.Deferred` returned by set('href', ...) and refresh().
-	//		Calling onLoadDeferred.addCallback() or addErrback() registers your
+	//		Calling onLoadDeferred.then() registers your
 	//		callback to be called only once, when the prior set('href', ...) call or
 	//		the initial href parameter to the constructor finishes loading.
 	//
@@ -229,7 +230,7 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 		this.cancel();
 
 		this.onLoadDeferred = new Deferred(lang.hitch(this, "cancel"));
-		this.onLoadDeferred.addCallback(lang.hitch(this, "onLoad"));
+		this.onLoadDeferred.then(lang.hitch(this, "onLoad"));
 
 		this._set("href", href);
 
@@ -277,14 +278,14 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 			// For back-compat reasons, call onLoad() for set('content', ...)
 			// calls but not for content specified in srcNodeRef (ie: <div data-dojo-type=ContentPane>...</div>)
 			// or as initialization parameter (ie: new ContentPane({content: ...})
-			this.onLoadDeferred.addCallback(lang.hitch(this, "onLoad"));
+			this.onLoadDeferred.then(lang.hitch(this, "onLoad"));
 		}
 
 		this._setContent(data || "");
 
 		this._isDownloaded = false; // mark that content is from a set('content') not a set('href')
 
-		return this.onLoadDeferred; 	// Deferred
+		return this.onLoadDeferred;	// Deferred
 	},
 	_getContentAttr: function(){
 		// summary:
@@ -303,10 +304,8 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 		this.onLoadDeferred = null;
 	},
 
-	uninitialize: function(){
-		if(this._beingDestroyed){
-			this.cancel();
-		}
+	destroy: function(){
+		this.cancel();
 		this.inherited(arguments);
 	},
 
@@ -355,7 +354,7 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 		this.cancel();
 
 		this.onLoadDeferred = new Deferred(lang.hitch(this, "cancel"));
-		this.onLoadDeferred.addCallback(lang.hitch(this, "onLoad"));
+		this.onLoadDeferred.then(lang.hitch(this, "onLoad"));
 		this._load();
 		return this.onLoadDeferred;		// If child has an href, promise that fires when refresh is complete
 	},
@@ -379,26 +378,27 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 
 		var hand = (this._xhrDfd = (this.ioMethod || xhr.get)(getArgs));
 
-		hand.addCallback(function(html){
-			try{
-				self._isDownloaded = true;
-				self._setContent(html, false);
-				self.onDownloadEnd();
-			}catch(err){
-				self._onError('Content', err); // onContentError
+		hand.then(
+			function(html){
+				try{
+					self._isDownloaded = true;
+					self._setContent(html, false);
+					self.onDownloadEnd();
+				}catch(err){
+					self._onError('Content', err); // onContentError
+				}
+				delete self._xhrDfd;
+				return html;
+			},
+			function(err){
+				if(!hand.canceled){
+					// show error message in the pane
+					self._onError('Download', err); // onDownloadError
+				}
+				delete self._xhrDfd;
+				return err;
 			}
-			delete self._xhrDfd;
-			return html;
-		});
-
-		hand.addErrback(function(err){
-			if(!hand.canceled){
-				// show error message in the pane
-				self._onError('Download', err); // onDownloadError
-			}
-			delete self._xhrDfd;
-			return err;
-		});
+		);
 
 		// Remove flag saying that a load is needed
 		delete this._hrefChanged;
@@ -409,7 +409,7 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 		//		This is called whenever new content is being loaded
 		this._set("isLoaded", true);
 		try{
-			this.onLoadDeferred.callback(data);
+			this.onLoadDeferred.resolve(data);
 		}catch(e){
 			console.error('Error '+this.widgetId+' running custom onLoad code: ' + e.message);
 		}
@@ -521,17 +521,13 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 		}, this._contentSetterParams || {});
 
 		setter.set( (lang.isObject(cont) && cont.domNode) ? cont.domNode : cont, setterParams );
-
-		// setter params must be pulled afresh from the ContentPane each time
+		
+			// setter params must be pulled afresh from the ContentPane each time
 		delete this._contentSetterParams;
-
-		if(this.doLayout){
-			this._checkIfSingleChild();
-		}
-
+	
 		if(!isFakeContent){
 			if(this._started){
-				// Startup each top level child widget (and they will start their children, recursively)
+					// Startup each top level child widget (and they will start their children, recursively)
 				delete this._started;
 				this.startup();
 
@@ -546,7 +542,7 @@ return declare("dijit.layout.ContentPane", [_Widget, _ContentPaneResizeMixin], {
 	},
 
 	_onError: function(type, err, consoleText){
-		this.onLoadDeferred.errback(err);
+		this.onLoadDeferred.reject(err);
 
 		// shows user the string that is returned by on[type]Error
 		// override on[type]Error and return your own string to customize

@@ -63,7 +63,13 @@ table.dijitInline {
 	float: none !important; /* needed by FF to squeeze the INPUT in */
 	position: relative;
 	vertical-align: middle;
-	#display: inline;
+}
+.dj_ie6 .dijitInputContainer,
+.dj_ie8.dj_iequirks .dijitInputContainer {
+	float: left !important; /* needed by IE to squeeze the INPUT in */
+}
+.dj_ie7 .dijitInputContainer {
+        display: inline-block !important; /* to fix wrong text alignment in rtl text box */
 }
 
 .dj_ie input.dijitTextBox,
@@ -90,10 +96,10 @@ table.dijitInline {
 	line-height:1px;
 }
 
-.dijitOffScreen {
-	position: absolute;
-	left: 50%;
-	top: -10000px;
+.dijitOffScreen { /* these class attributes should supercede any inline positioning style */
+	position: absolute !important;
+	left: 50% !important;
+	top: -10000px !important;
 }
 
 /*
@@ -1313,6 +1319,11 @@ Main class hierarchy:
     z-index: 0; /* so z-index settings below have no effect outside of the TabContainer */
     overflow-y: visible; /* prevent off-by-one-pixel errors from hiding bottom border (opposite tab labels) */
 }
+.dj_ie6 .dijitTabContainer {
+    /* workaround IE6 problem when tall content overflows TabContainer, see editor/test_FullScreen.html */
+   overflow: hidden;
+
+}
 .dijitTabContainerNoLayout {
 	width: 100%;	/* otherwise ScrollingTabController goes to 50K pixels wide */
 }
@@ -1362,7 +1373,7 @@ Main class hierarchy:
 
 .dijitTabContainerLeft-tabs {
 	border-right: 1px solid black;
-	float: left;
+	float: left;    /* needed for IE7 RTL mode */
 }
 .dijitTabContainerLeft-container {
 	border-left: 0;
@@ -1377,7 +1388,7 @@ Main class hierarchy:
 
 .dijitTabContainerRight-tabs {
 	border-left: 1px solid black;
-	float: left;
+	float: left;    /* needed for IE7 RTL mode */
 }
 .dijitTabContainerRight-container {
 	border-right: 0;
@@ -1422,11 +1433,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	#zoom: 1; /* set hasLayout:true to mimic inline-block */
 	#display:inline; /* don't use .dj_ie since that increases the priority */
 }
-
-.dijitTabInnerDiv {
-	position:relative;
-}
-
 
 .tabStripButton {
 	z-index: 12;
@@ -1962,6 +1968,12 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	color:white;
 	cursor:pointer;
 }
+
+.dijitTimePickerItemDisabled {
+	color:gray;
+	text-decoration:line-through;
+}
+
 .dijit_a11y .dijitTimePickerItemSelected .dijitTimePickerItemInner {
 	border: solid 4px black;
 }
@@ -2078,4 +2090,39 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitDisabled {
 	/* a region the user would be able to click on, but it's disabled */
 	cursor: default;
+}
+
+/* Drag and Drop */
+.dojoDndItem {
+    padding: 2px;  /* will be replaced by border during drag over (dojoDndItemBefore, dojoDndItemAfter) */
+}
+.dojoDndHorizontal .dojoDndItem {
+    /* make contents of horizontal container be side by side, rather than vertical */
+    #display: inline;
+    display: inline-block;
+}
+
+.dojoDndItemBefore,
+.dojoDndItemAfter {
+	border: 0px solid #369;
+}
+.dojoDndItemBefore {
+    border-width: 2px 0 0 0;
+    padding: 0 2px 2px 2px;
+}
+.dojoDndItemAfter {
+    border-width: 0 0 2px 0;
+    padding: 2px 2px 0 2px;
+}
+.dojoDndHorizontal .dojoDndItemBefore {
+    border-width: 0 0 0 2px;
+    padding: 2px 2px 2px 0;
+}
+.dojoDndHorizontal .dojoDndItemAfter {
+    border-width: 0 2px 0 0;
+    padding: 2px 0 2px 2px;
+}
+
+.dojoDndItemOver {
+	cursor:pointer;
 }

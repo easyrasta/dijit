@@ -297,7 +297,7 @@ var _FormatBlockDropDown = declare("dijit._editor.plugins._FormatBlockDropDown",
 	_execCommand: function(editor, command, choice){
 		// summary:
 		//		Over-ride for default exec-command label.
-		// 		Allows us to treat 'none' as special.
+		//		Allows us to treat 'none' as special.
 		if(choice === "noFormat"){
 			var start;
 			var end;
@@ -418,7 +418,7 @@ var _FormatBlockDropDown = declare("dijit._editor.plugins._FormatBlockDropDown",
 			// undo friendly.
 			win.withGlobal(editor.window,
 				 "selectElementChildren", selectionapi, [node]);
-			var html = 	win.withGlobal(editor.window,
+			var html = win.withGlobal(editor.window,
 				 "getSelectedHtml", selectionapi, [null]);
 			win.withGlobal(editor.window,
 				 "selectElement", selectionapi, [node]);
@@ -592,5 +592,12 @@ array.forEach(["fontName", "fontSize", "formatBlock"], function(name){
 		});
 	};
 });
+
+// Make all classes available through AMD, and return main class
+FontChoice._FontDropDown = _FontDropDown;
+FontChoice._FontNameDropDown = _FontNameDropDown;
+FontChoice._FontSizeDropDown = _FontSizeDropDown;
+FontChoice._FormatBlockDropDown = _FormatBlockDropDown;
+return FontChoice;
 
 });

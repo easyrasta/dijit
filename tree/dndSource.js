@@ -66,6 +66,9 @@ return declare("dijit.tree.dndSource", _dndSelector, {
 	//		Distance from upper/lower edge of node to allow drop to reorder nodes
 	betweenThreshold: 0,
 
+	// Flag used by Avatar.js to signal to generate text node when dragging
+	generateText: true,
+
 	constructor: function(/*dijit.Tree*/ tree, /*dijit.tree.__SourceArgs*/ params){
 		// summary:
 		//		a constructor of the Tree DnD Source
@@ -144,10 +147,16 @@ return declare("dijit.tree.dndSource", _dndSelector, {
 		this.targetAnchor = null;
 	},
 
-	_onDragMouse: function(e){
+	_onDragMouse: function(e, firstTime){
 		// summary:
 		//		Helper method for processing onmousemove/onmouseover events while drag is in progress.
 		//		Keeps track of current drop target.
+		// e: Event
+		//		The mousemove event.
+		// firstTime: Boolean?
+		//		If this flag is set, this is the first mouse move event of the drag, so call m.canDrop() etc.
+		//		even if newTarget == null because the user quickly dragged a node in the Tree to a position
+		//		over Tree.containerNode but not over any TreeNode (#7971)
 
 		var m = DNDManager.manager(),
 			oldTarget = this.targetAnchor,			// the TreeNode corresponding to TreeNode mouse was previously over
@@ -169,7 +178,7 @@ return declare("dijit.tree.dndSource", _dndSelector, {
 			}
 		}
 
-		if(newTarget != oldTarget || newDropPosition != oldDropPosition){
+		if(firstTime || newTarget != oldTarget || newDropPosition != oldDropPosition){
 			if(oldTarget){
 				this._removeItemClass(oldTarget.rowNode, oldDropPosition);
 			}
@@ -243,6 +252,7 @@ return declare("dijit.tree.dndSource", _dndSelector, {
 					}
 					nodes = array.map(nodes, function(n){return n.domNode});
 					m.startDrag(this, nodes, this.copyState(connect.isCopyKey(e)));
+					this._onDragMouse(e, true);	// because this may be the only mousemove event we get before the drop
 				}
 			}
 		}
@@ -349,7 +359,7 @@ return declare("dijit.tree.dndSource", _dndSelector, {
 		// summary:
 		//		Returns objects passed to `Tree.model.newItem()` based on DnD nodes
 		//		dropped onto the tree.   Developer must override this method to enable
-		// 		dropping from external sources onto this Tree, unless the Tree.model's items
+		//		dropping from external sources onto this Tree, unless the Tree.model's items
 		//		happen to look like {id: 123, name: "Apple" } with no other attributes.
 		// description:
 		//		For each node in nodes[], which came from source, create a hash of name/value

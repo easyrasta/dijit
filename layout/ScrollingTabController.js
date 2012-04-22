@@ -6,8 +6,9 @@ define([
 	"dojo/dom-style", // domStyle.style
 	"dojo/_base/fx", // Animation
 	"dojo/_base/lang", // lang.hitch
+	"dojo/on",
 	"dojo/query", // query
-	"dojo/_base/sniff", // has("ie"), has("webkit"), has("quirks")
+	"dojo/sniff", // has("ie"), has("webkit"), has("quirks")
 	"../registry",	// registry.byId()
 	"dojo/text!./templates/ScrollingTabController.html",
 	"dojo/text!./templates/_ScrollingTabControllerButton.html",
@@ -19,7 +20,7 @@ define([
 	"../form/Button",
 	"../_HasDropDown",
 	"dojo/NodeList-dom" // NodeList.style
-], function(array, declare, domClass, domGeometry, domStyle, fx, lang, query, has,
+], function(array, declare, domClass, domGeometry, domStyle, fx, lang, on, query, has,
 	registry, tabControllerTemplate, buttonTemplate, TabController, layoutUtils, _WidgetsInTemplateMixin,
 	Menu, MenuItem, Button, _HasDropDown){
 
@@ -102,22 +103,18 @@ var ScrollingTabController = declare("dijit.layout.ScrollingTabController", [Tab
 		// to that the tabs are hidden/shown depending on the container's visibility setting.
 		domStyle.set(this.domNode, "visibility", "");
 		this._postStartup = true;
+
+		// changes to the tab button label or iconClass will have changed the width of the
+		// buttons, so do a resize
+		this._adoptHandles(on(this.containerNode, "attrmodified-label, attrmodified-iconclass", lang.hitch(this, function(evt){
+			if(this._dim){
+				this.resize(this._dim);
+			}
+		})));
 	},
 
 	onAddChild: function(page, insertIndex){
 		this.inherited(arguments);
-
-		// changes to the tab button label or iconClass will have changed the width of the
-		// buttons, so do a resize
-		array.forEach(["label", "iconClass"], function(attr){
-			this.pane2watches[page.id].push(
-				this.pane2button[page.id].watch(attr, lang.hitch(this, function(){
-					if(this._postStartup && this._dim){
-						this.resize(this._dim);
-					}
-				}))
-			);
-		}, this);
 
 		// Increment the width of the wrapper when a tab is added
 		// This makes sure that the buttons never wrap.

@@ -14,10 +14,13 @@ define([
 	"dojo/_base/kernel", // kernel.deprecated
 	"dojo/keys",	// arrows etc.
 	"dojo/_base/lang", // lang.getObject lang.mixin lang.hitch
+	"dojo/mouse",	// mouse.enter, mouse.leave
+	"dojo/on",		// on(), on.selector()
 	"dojo/topic",
+	"dojo/when",
 	"./focus",
-	"./registry",	// registry.getEnclosingWidget(), manager.defaultDuration
-	"./_base/manager",	// manager.getEnclosingWidget(), manager.defaultDuration
+	"./registry",	// registry.byNode(), registry.getEnclosingWidget()
+	"./_base/manager",	// manager.defaultDuration
 	"./_Widget",
 	"./_TemplatedMixin",
 	"./_Container",
@@ -29,7 +32,7 @@ define([
 	"./tree/ForestStoreModel",
 	"./tree/_dndSelector"
 ], function(array, connect, cookie, declare, Deferred, DeferredList,
-			dom, domClass, domGeometry, domStyle, event, fxUtils, kernel, keys, lang, topic,
+			dom, domClass, domGeometry, domStyle, event, fxUtils, kernel, keys, lang, mouse, on, topic, when,
 			focus, registry, manager, _Widget, _TemplatedMixin, _Container, _Contained, _CssStateMixin,
 			treeNodeTemplate, treeTemplate, TreeStoreModel, ForestStoreModel, _dndSelector){
 
@@ -91,8 +94,7 @@ var TreeNode = declare(
 
 	// For hover effect for tree node, and focus effect for label
 	cssStateNodes: {
-		rowNode: "dijitTreeRow",
-		labelNode: "dijitTreeLabel"
+		rowNode: "dijitTreeRow"
 	},
 
 	// Tooltip is defined in _WidgetBase but we need to handle the mapping to DOM here
@@ -192,7 +194,7 @@ var TreeNode = declare(
 		domClass.replace(this[nodeName], this[clsName] || "", oldCls || "");
 
 		domStyle.set(this[nodeName], this.tree["get" + upper + "Style"](item, this.isExpanded) || {});
- 	},
+	},
 
 	_updateLayout: function(){
 		// summary:
@@ -331,7 +333,7 @@ var TreeNode = declare(
 		//		Sets the child items of this node, removing/adding nodes
 		//		from current children to match specified items[] array.
 		//		Also, if this.persist == true, expands any children that were previously
-		// 		opened.
+		//		opened.
 		// returns:
 		//		Deferred object that fires after all previously opened children
 		//		have been expanded again (or fires instantly if there are no such children).
@@ -352,7 +354,7 @@ var TreeNode = declare(
 		// All the old children of this TreeNode are subject for destruction if
 		//		1) they aren't listed in the new children array (items)
 		//		2) they aren't immediately adopted by another node (DnD)
-		setTimeout(function(){
+		this.defer(function(){
 			array.forEach(oldChildren, function(node){
 				if(!node._destroyed && !node.getParent()){
 					// If node is in selection then remove it.
@@ -375,7 +377,7 @@ var TreeNode = declare(
 				}
 			});
 
-		}, 0);
+		});
 
 		this.state = "LOADED";
 
@@ -499,16 +501,6 @@ var TreeNode = declare(
 		this._setExpando(false);
 	},
 
-	_onLabelFocus: function(){
-		// summary:
-		//		Called when this row is focused (possibly programatically)
-		//		Note that we aren't using _onFocus() builtin to dijit
-		//		because it's called when focus is moved to a descendant TreeNode.
-		// tags:
-		//		private
-		this.tree._onNodeFocus(this);
-	},
-
 	setSelected: function(/*Boolean*/ selected){
 		// summary:
 		//		A Tree has a (single) currently selected node.
@@ -531,36 +523,6 @@ var TreeNode = declare(
 		this.labelNode.setAttribute("tabIndex", selected ? "0" : "-1");
 	},
 
-	_onClick: function(evt){
-		// summary:
-		//		Handler for onclick event on a node
-		// tags:
-		//		private
-		this.tree._onClick(this, evt);
-	},
-	_onDblClick: function(evt){
-		// summary:
-		//		Handler for ondblclick event on a node
-		// tags:
-		//		private
-		this.tree._onDblClick(this, evt);
-	},
-
-	_onMouseEnter: function(evt){
-		// summary:
-		//		Handler for onmouseenter event on a node
-		// tags:
-		//		private
-		this.tree._onNodeMouseEnter(this, evt);
-	},
-
-	_onMouseLeave: function(evt){
-		// summary:
-		//		Handler for onmouseenter event on a node
-		// tags:
-		//		private
-		this.tree._onNodeMouseLeave(this, evt);
-	},
 
 	_setTextDirAttr: function(textDir){
 		if(textDir &&((this.textDir != textDir) || !this._created)){
@@ -668,7 +630,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 		// summary:
 		//		Returns objects passed to `Tree.model.newItem()` based on DnD nodes
 		//		dropped onto the tree.   Developer must override this method to enable
-		// 		dropping from external sources onto this Tree, unless the Tree.model's items
+		//		dropping from external sources onto this Tree, unless the Tree.model's items
 		//		happen to look like {id: 123, name: "Apple" } with no other attributes.
 		// description:
 		//		For each node in nodes[], which came from source, create a hash of name/value
@@ -785,6 +747,32 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 
 	postCreate: function(){
 		this._initState();
+
+		// Catch events on TreeNodes
+		var self = this;
+		this._adoptHandles(
+			on(this.domNode, on.selector(".dijitTreeNode", mouse.enter), function(evt){
+				self._onNodeMouseEnter(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeNode", mouse.leave), function(evt){
+				self._onNodeMouseLeave(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeNode", "click"), function(evt){
+				self._onClick(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeNode", "dblclick"), function(evt){
+				self._onDblClick(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeNode", "keypress"), function(evt){
+				self._onKeyPress(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeNode", "keydown"), function(evt){
+				self._onKeyDown(registry.byNode(this), evt);
+			}),
+			on(this.domNode, on.selector(".dijitTreeRow", "focusin"), function(evt){
+				self._onNodeFocus(registry.getEnclosingWidget(this), evt);
+			})
+		);
 
 		// Create glue between store and Tree, if not specified directly by user
 		if(!this.model){
@@ -903,7 +891,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 					this._loadCalled = true;
 
 					// Do the selection and then fire onLoad()
-					Deferred.when(this.set("paths", paths), lang.hitch(this, function(){
+					when(this.set("paths", paths), lang.hitch(this, function(){
 						this.onLoadDeferred.resolve(true);
 						this.onLoad();
 					}));
@@ -983,7 +971,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 		// We may need to wait for some nodes to expand, so setting
 		// each path will involve a Deferred. We bring those deferreds
 		// together with a DeferredList.
-		var dl = new DeferredList(array.map(paths, function(path, idx){
+		var dl = new DeferredList(array.map(paths, function(path){
 			var d = new Deferred();
 
 			// normalize path to use identity
@@ -1128,7 +1116,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 		// summary:
 		//		Deprecated.   This should be specified on the model itself.
 		//
-		// 		Overridable function that return array of child items of given parent item,
+		//		Overridable function that return array of child items of given parent item,
 		//		or if parentItem==null then return top items in tree
 		// tags:
 		//		deprecated
@@ -1217,50 +1205,57 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 
 	/////////// Keyboard and Mouse handlers ////////////////////
 
-	_onKeyPress: function(/*Event*/ e){
+	_onKeyPress: function(/*dijit.TreeNode*/ treeNode, /*Event*/ e){
 		// summary:
-		//		Translates keypress events into commands for the controller
-		if(e.altKey){ return; }
-		var treeNode = registry.getEnclosingWidget(e.target);
-		if(!treeNode){ return; }
+		//		Handles keystrokes for printable keys, doing search navigation
 
-		var key = e.charOrCode;
-		if(typeof key == "string" && key != " "){	// handle printables (letter navigation)
-			// Check for key navigation.
-			if(!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey){
-				this._onLetterKeyNav( { node: treeNode, key: key.toLowerCase() } );
-				event.stop(e);
-			}
-		}else{	// handle non-printables (arrow keys)
+		if(e.charCode <= 32){
+			// Avoid duplicate events on firefox (this is an arrow key that will be handled by keydown handler)
+			return;
+		}
+
+		var char = String.fromCharCode(e.charCode);
+
+		// Check for key navigation.
+		if(!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey){
+			this._onLetterKeyNav( { node: treeNode, key: char.toLowerCase() } );
+			event.stop(e);
+		}
+	},
+
+	_onKeyDown: function(/*dijit.TreeNode*/ treeNode, /*Event*/ e){
+		// summary:
+		//		Handles arrow, space, and enter keys
+
+		var key = e.keyCode;
+
+		var map = this._keyHandlerMap;
+		if(!map){
+			// Setup table mapping keys to events.
+			// On WebKit based browsers, the combination ctrl-enter does not get passed through. To allow accessible
+			// multi-select on those browsers, the space key is also used for selection.
+			// Therefore, also allow space key for keyboard "click" operation.
+			map = {};
+			map[keys.ENTER] = map[keys.SPACE] = map[" "] = "_onEnterKey";
+			map[this.isLeftToRight() ? keys.LEFT_ARROW : keys.RIGHT_ARROW] = "_onLeftArrow";
+			map[this.isLeftToRight() ? keys.RIGHT_ARROW : keys.LEFT_ARROW] = "_onRightArrow";
+			map[keys.UP_ARROW] = "_onUpArrow";
+			map[keys.DOWN_ARROW] = "_onDownArrow";
+			map[keys.HOME] = "_onHomeKey";
+			map[keys.END] = "_onEndKey";
+			this._keyHandlerMap = map;
+		}
+
+		if(this._keyHandlerMap[key]){
 			// clear record of recent printables (being saved for multi-char letter navigation),
 			// because "a", down-arrow, "b" shouldn't search for "ab"
 			if(this._curSearch){
-				clearTimeout(this._curSearch.timer);
+				this._curSearch.timer.remove();
 				delete this._curSearch;
 			}
 
-			var map = this._keyHandlerMap;
-			if(!map){
-				// setup table mapping keys to events
-				map = {};
-				map[keys.ENTER]="_onEnterKey";
-				//On WebKit based browsers, the combination ctrl-enter
-				//does not get passed through. To allow accessible
-				//multi-select on those browsers, the space key is
-				//also used for selection.
-				map[keys.SPACE]= map[" "] = "_onEnterKey";
-				map[this.isLeftToRight() ? keys.LEFT_ARROW : keys.RIGHT_ARROW]="_onLeftArrow";
-				map[this.isLeftToRight() ? keys.RIGHT_ARROW : keys.LEFT_ARROW]="_onRightArrow";
-				map[keys.UP_ARROW]="_onUpArrow";
-				map[keys.DOWN_ARROW]="_onDownArrow";
-				map[keys.HOME]="_onHomeKey";
-				map[keys.END]="_onEndKey";
-				this._keyHandlerMap = map;
-			}
-			if(this._keyHandlerMap[key]){
-				this[this._keyHandlerMap[key]]( { node: treeNode, item: treeNode.item, evt: e } );
-				event.stop(e);
-			}
+			this[this._keyHandlerMap[key]]( { node: treeNode, item: treeNode.item, evt: e } );
+			event.stop(e);
 		}
 	},
 
@@ -1387,7 +1382,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 			// We are continuing a search.  Ex: user has pressed 'a', and now has pressed
 			// 'b', so we want to search for nodes starting w/"ab".
 			cs.pattern = cs.pattern + message.key;
-			clearTimeout(cs.timer);
+			cs.timer.remove();
 		}else{
 			// We are starting a new search
 			cs = this._curSearch = {
@@ -1397,9 +1392,8 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 		}
 
 		// set/reset timer to forget recent keystrokes
-		var self = this;
-		cs.timer = setTimeout(function(){
-			delete self._curSearch;
+		cs.timer = this.defer(function(){
+			delete this._curSearch;
 		}, this.multiCharSearchDuration);
 
 		// Navigate to TreeNode matching keystrokes [entered so far].
@@ -1766,17 +1760,19 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 			}else{
 				delete this._openedNodes[path];
 			}
-			var ary = [];
-			for(var id in this._openedNodes){
-				ary.push(id);
+			if(this.persist && this.cookieName){
+				var ary = [];
+				for(var id in this._openedNodes){
+					ary.push(id);
+				}
+				cookie(this.cookieName, ary.join(","), {expires:365});
 			}
-			cookie(this.cookieName, ary.join(","), {expires:365});
 		}
 	},
 
 	destroy: function(){
 		if(this._curSearch){
-			clearTimeout(this._curSearch.timer);
+			this._curSearch.timer.remove();
 			delete this._curSearch;
 		}
 		if(this.rootNode){
@@ -1830,7 +1826,7 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 	}
 });
 
-Tree._TreeNode = TreeNode;	// for monkey patching
+Tree._TreeNode = TreeNode;	// for monkey patching or creating subclasses of _TreeNode
 
 return Tree;
 });

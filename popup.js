@@ -12,11 +12,11 @@ define([
 	"dojo/keys",
 	"dojo/_base/lang", // lang.hitch
 	"dojo/on",
-	"dojo/_base/sniff", // has("ie") has("mozilla")
+	"dojo/sniff", // has("ie") has("mozilla")
 	"dojo/_base/window", // win.body
 	"./place",
 	"./BackgroundIframe",
-	"."	// dijit (defining dijit.popup to match API doc)
+	"./main"	// dijit (defining dijit.popup to match API doc)
 ], function(array, aspect, connect, declare, dom, domAttr, domConstruct, domGeometry, domStyle, event, keys, lang, on, has, win,
 			place, BackgroundIframe, dijit){
 
@@ -104,7 +104,7 @@ define([
 			//		Hide this popup widget (until it is ready to be shown).
 			//		Initialization for widgets that will be used as popups
 			//
-			// 		Also puts widget inside a wrapper DIV (if not already in one)
+			//		Also puts widget inside a wrapper DIV (if not already in one)
 			//
 			//		If popup widget needs to layout it should
 			//		do so when it is made visible, and popup._onShow() is called.
@@ -210,7 +210,7 @@ define([
 			//		Hide this popup widget (until it is ready to be shown).
 			//		Initialization for widgets that will be used as popups
 			//
-			// 		Also puts widget inside a wrapper DIV (if not already in one)
+			//		Also puts widget inside a wrapper DIV (if not already in one)
 			//
 			//		If popup widget needs to layout it should
 			//		do so when it is made visible, and popup._onShow() is called.

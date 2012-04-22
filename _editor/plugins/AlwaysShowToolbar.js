@@ -4,7 +4,7 @@ define([
 	"dojo/dom-construct", // domConstruct.place
 	"dojo/dom-geometry",
 	"dojo/_base/lang", // lang.hitch
-	"dojo/_base/sniff", // has("ie") has("opera")
+	"dojo/sniff", // has("ie") has("opera")
 	"dojo/_base/window", // win.body
 	"../_Plugin"
 ], function(declare, domClass, domConstruct, domGeometry, lang, has, win, _Plugin){
@@ -34,7 +34,7 @@ return declare("dijit._editor.plugins.AlwaysShowToolbar", _Plugin, {
 	//		Specify this in extraPlugins (or plugins) parameter and also set
 	//		height to "".
 	// example:
-	//	|	<div data-dojo-type="dijit.Editor" height=""
+	//	|	<div data-dojo-type="dijit/Editor" height=""
 	//	|	data-dojo-props="extraPlugins: [dijit._editor.plugins.AlwaysShowToolbar]">
 
 	// _handleScroll: Boolean
@@ -50,7 +50,7 @@ return declare("dijit._editor.plugins.AlwaysShowToolbar", _Plugin, {
 
 		this.editor = e;
 
-		e.onLoadDeferred.addCallback(lang.hitch(this, this.enable));
+		e.onLoadDeferred.then(lang.hitch(this, this.enable));
 	},
 
 	enable: function(d){

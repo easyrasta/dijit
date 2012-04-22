@@ -7,7 +7,7 @@ define([
 	"dojo/_base/array", // array.forEach
 	"dojo/_base/declare", // declare
 	"dojo/dom-construct", // domConstruct.destroy, domConstruct.toDom
-	"dojo/_base/sniff", // has("ie")
+	"dojo/sniff", // has("ie")
 	"dojo/_base/unload", // unload.addOnWindowUnload
 	"dojo/_base/window" // win.doc
 ], function(lang, touch, _WidgetBase, string, cache, array, declare, domConstruct, has, unload, win) {
@@ -54,14 +54,14 @@ define([
 		// _attachPoints: [private] String[]
 		//		List of widget attribute names associated with data-dojo-attach-point=... in the
 		//		template, ex: ["containerNode", "labelNode"]
- 		_attachPoints: [],
+		_attachPoints: [],
  =====*/
 
 /*=====
 		// _attachEvents: [private] Handle[]
 		//		List of connections associated with data-dojo-attach-event=... in the
 		//		template
- 		_attachEvents: [],
+		_attachEvents: [],
  =====*/
 
 		constructor: function(){

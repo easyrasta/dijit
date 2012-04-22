@@ -3,7 +3,7 @@ define([
 	"dojo/dom-attr", // domAttr.set
 	"dojo/_base/event", // event.stop
 	"dojo/_base/kernel", // kernel.deprecated
-	"dojo/_base/sniff", // has("ie")
+	"dojo/sniff", // has("ie")
 	"../_Widget",
 	"../_TemplatedMixin",
 	"./_FormMixin",
@@ -28,7 +28,7 @@ define([
 		//		Widget corresponding to HTML form tag, for validation and serialization
 		//
 		// example:
-		//	|	<form data-dojo-type="dijit.form.Form" id="myForm">
+		//	|	<form data-dojo-type="dijit/form/Form" id="myForm">
 		//	|		Name: <input type="text" name="name" />
 		//	|	</form>
 		//	|	myObj = {name: "John Doe"};
