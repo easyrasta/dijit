@@ -10,13 +10,8 @@ define([
 	"../_Plugin",
 	"../RichText",
 	"../range",
-	"../selection",
 	"../../_base/focus"
-], function(declare, domConstruct, event, keys, lang, has, win, winUtils, _Plugin, RichText, rangeapi, selectionapi,
-			baseFocus){
-/*=====
-	var _Plugin = dijit._editor._Plugin;
-=====*/
+], function(declare, domConstruct, event, keys, lang, has, win, winUtils, _Plugin, RichText, rangeapi, baseFocus){
 
 // module:
 //		dijit/_editor/plugins/EnterKeyHandling
@@ -324,9 +319,9 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							selection.removeAllRanges();
 							selection.addRange(newrange);
 							if(endEmpty && !has("webkit")){
-								selectionapi.remove();
+								this.editor._sCall("remove", []);
 							}else{
-								selectionapi.collapse(true);
+								this.editor._sCall("collapse", [true]);
 							}
 						}else{
 							var targetNode;
@@ -347,7 +342,7 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							newrange.setEnd(endNode, endNode.length);
 							selection.removeAllRanges();
 							selection.addRange(newrange);
-							selectionapi.collapse(true);
+							this.editor._sCall("collapse", [true]);
 						}
 					}
 				}else{
@@ -614,7 +609,7 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 		// tags:
 		//		private
 		var para = /P|DIV|LI/i.test(container.tagName) ?
-			container : selectionapi.getParentOfType(container,['P','DIV','LI']);
+			container : this.editor._sCall("getParentOfType", [container,['P','DIV','LI']]);
 
 		if(!para){ return; }
 		if(para.lastChild){

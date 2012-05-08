@@ -8,11 +8,6 @@ define([
 	"dojo/i18n!./nls/validate"
 ], function(declare, kernel, i18n, TextBox, Tooltip, template){
 
-/*=====
-	var Tooltip = dijit.Tooltip;
-	var TextBox = dijit.form.TextBox;
-=====*/
-
 	// module:
 	//		dijit/form/ValidationTextBox
 	// summary:
@@ -20,14 +15,14 @@ define([
 
 
 	/*=====
-		dijit.form.ValidationTextBox.__Constraints = function(){
-			// locale: String
-			//		locale used for validation, picks up value from this widget's lang attribute
-			// _flags_: anything
-			//		various flags passed to pattern function
-			this.locale = "";
-			this._flags_ = "";
-		}
+	var __Constraints = function(){
+		// locale: String
+		//		locale used for validation, picks up value from this widget's lang attribute
+		// _flags_: anything
+		//		various flags passed to pattern function
+		this.locale = "";
+		this._flags_ = "";
+	};
 	=====*/
 
 	var ValidationTextBox;
@@ -71,7 +66,7 @@ define([
 		//		displayed when the field is focused.
 		message: "",
 
-		// constraints: dijit.form.ValidationTextBox.__Constraints
+		// constraints: __Constraints
 		//		user-defined object needed to pass parameters to the validator functions
 		constraints: {},
 
@@ -85,7 +80,7 @@ define([
 		// regExp: Deprecated [extension protected] String.  Use "pattern" instead.
 		regExp: "",
 
-		regExpGen: function(/*dijit.form.ValidationTextBox.__Constraints*/ /*===== constraints =====*/){
+		regExpGen: function(/*__Constraints*/ /*===== constraints =====*/){
 			// summary:
 			//		Deprecated.  Use set('pattern', Function) instead.
 		},
@@ -119,7 +114,7 @@ define([
 			this.validate(this.focused);
 		},
 
-		validator: function(/*anything*/ value, /*dijit.form.ValidationTextBox.__Constraints*/ constraints){
+		validator: function(/*anything*/ value, /*__Constraints*/ constraints){
 			// summary:
 			//		Overridable function used to validate the text input against the regular expression.
 			// tags:
@@ -226,14 +221,14 @@ define([
 			this.constraints = {};
 		},
 
-		_setConstraintsAttr: function(/*Object*/ constraints){
+		_setConstraintsAttr: function(/*__Constraints*/ constraints){
 			if(!constraints.locale && this.lang){
 				constraints.locale = this.lang;
 			}
 			this._set("constraints", constraints);
 		},
 
-		_getPatternAttr: function(/*dijit.form.ValidationTextBox.__Constraints*/ constraints){
+		_getPatternAttr: function(/*__Constraints*/ constraints){
 			// summary:
 			//		Hook to get the current regExp and to compute the partial validation RE.
 			var p = this.pattern;
