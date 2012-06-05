@@ -98,7 +98,7 @@ var ScrollingTabController = declare("dijit.layout.ScrollingTabController", [Tab
 
 		// changes to the tab button label or iconClass will have changed the width of the
 		// buttons, so do a resize
-		this._adoptHandles(on(this.containerNode, "attrmodified-label, attrmodified-iconclass", lang.hitch(this, function(evt){
+		this.own(on(this.containerNode, "attrmodified-label, attrmodified-iconclass", lang.hitch(this, function(evt){
 			if(this._dim){
 				this.resize(this._dim);
 			}
@@ -472,6 +472,7 @@ declare(
 				id: page.id + "_stcMi",
 				label: page.title,
 				iconClass: page.iconClass,
+				disabled: page.disabled,
 				dir: page.dir,
 				lang: page.lang,
 				textDir: page.textDir,

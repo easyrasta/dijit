@@ -207,6 +207,7 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 	_onInput: function(){
 		// summary:
 		//		Called AFTER the input event has happened
+
 		// set text direction according to textDir that was defined in creation
 		if(this.textDir == "auto"){
 			this.applyTextDir(this.focusNode, this.focusNode.value);
@@ -325,7 +326,7 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 			if(faux._wasConsumed){ return; } // if preventDefault was called
 			this.defer(function(){ this._onInput(faux); }); // widget notification after key has posted
 		};
-		this._adoptHandles(on(this.textbox, "keydown, keypress, paste, cut, input, compositionend", lang.hitch(this, handleEvent)));
+		this.own(on(this.textbox, "keydown, keypress, paste, cut, input, compositionend", lang.hitch(this, handleEvent)));
 	},
 
 	_blankValue: '', // if the textbox is blank, what value should be reported

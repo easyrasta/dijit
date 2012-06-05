@@ -12,6 +12,7 @@ define([
 	"dojo/dnd/Moveable", // Moveable
 	"dojo/dnd/Mover", // Mover Mover.prototype.destroy.apply
 	"dojo/query", // query
+	"dojo/mouse", // mouse.wheel
 	"../registry", // registry.findWidgets
 	"../focus",		// focus.focus()
 	"../typematic",
@@ -19,7 +20,7 @@ define([
 	"./_FormValueWidget",
 	"../_Container",
 	"dojo/text!./templates/HorizontalSlider.html"
-], function(array, declare, move, event, fx, domGeometry, domStyle, keys, lang, has, Moveable, Mover, query,
+], function(array, declare, move, event, fx, domGeometry, domStyle, keys, lang, has, Moveable, Mover, query, mouse,
 			registry, focus, typematic, Button, _FormValueWidget, _Container, template){
 
 // module:
@@ -272,9 +273,7 @@ var HorizontalSlider = declare("dijit.form.HorizontalSlider", [_FormValueWidget,
 		// summary:
 		//		Event handler for mousewheel where supported
 		event.stop(evt);
-		var janky = !has("mozilla");
-		var scroll = evt[(janky ? "wheelDelta" : "detail")] * (janky ? 1 : -1);
-		this._bumpValue(scroll < 0 ? -1 : 1, true); // negative scroll acts like a decrement
+		this._bumpValue(evt.wheelDelta < 0 ? -1 : 1, true); // negative scroll acts like a decrement
 	},
 
 	startup: function(){
@@ -319,12 +318,12 @@ var HorizontalSlider = declare("dijit.form.HorizontalSlider", [_FormValueWidget,
 		this.inherited(arguments);
 
 		if(this.showButtons){
-			this._adoptHandles(
+			this.own(
 				typematic.addMouseListener(this.decrementButton, this, "_typematicCallback", 25, 500),
 				typematic.addMouseListener(this.incrementButton, this, "_typematicCallback", 25, 500)
 			);
 		}
-		this.connect(this.domNode, !has("mozilla") ? "onmousewheel" : "DOMMouseScroll", "_mouseWheeled");
+		this.connect(this.domNode, mouse.wheel, "_mouseWheeled");
 
 		// define a custom constructor for a SliderMover that points back to me
 		var mover = declare(_SliderMover, {
@@ -340,7 +339,6 @@ var HorizontalSlider = declare("dijit.form.HorizontalSlider", [_FormValueWidget,
 		if(this._inProgressAnim && this._inProgressAnim.status != "stopped"){
 			this._inProgressAnim.stop(true);
 		}
-		this._supportingWidgets = registry.findWidgets(this.domNode); // tells destroy about pseudo-child widgets (ruler/labels)
 		this.inherited(arguments);
 	}
 });

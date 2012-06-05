@@ -29,7 +29,8 @@ define([
 		pageSize: Infinity,
 
 		// store: [const] dojo.store.api.Store
-		//		Reference to data provider object used by this ComboBox
+		//		Reference to data provider object used by this ComboBox.
+		//		The store must accept an object hash of properties for its query. See `query` and `queryExpr` for details.
 		store: null,
 
 		// fetchProperties: Object
@@ -41,9 +42,8 @@ define([
 		fetchProperties:{},
 
 		// query: Object
-		//		A query that can be passed to 'store' to initially filter the items,
-		//		before doing further filtering based on `searchAttr` and the key.
-		//		Any reference to the `searchAttr` is ignored.
+		//		A query that can be passed to `store` to initially filter the items.
+		//		ComboBox overwrites any reference to the `searchAttr` and sets it to the `queryExpr` with the user's input substituted.
 		query: {},
 
 		// searchDelay: Integer
@@ -135,9 +135,19 @@ define([
 			}
 		},
 
-		onSearch: function(/*Object*/ results){
+		onSearch: function(/*===== results, query, options =====*/){
 			// summary:
 			//		Callback when a search completes.
+			//
+			// results: Object
+			//		An array of items from the originating _SearchMixin's store.
+			//
+			// query: Object
+			//		A copy of the originating _SearchMixin's query property.
+			//
+			// options: Object
+			//		The additional parameters sent to the originating _SearchMixin's store, including: start, count, queryOptions.
+			//
 			// tags:
 			//		callback
 		},

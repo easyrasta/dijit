@@ -68,7 +68,7 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 	// linkDialogTemplate: [protected] String
 	//		Template for contents of TooltipDialog to pick URL
 	linkDialogTemplate: [
-		"<table><tr><td>",
+		"<table role='presentation'><tr><td>",
 		"<label for='${id}_urlInput'>${url}</label>",
 		"</td><td>",
 		"<input data-dojo-type='dijit.form.ValidationTextBox' required='true' " +
@@ -265,7 +265,8 @@ var LinkDialog = declare("dijit._editor.plugins.LinkDialog", _Plugin, {
 		//		Callback from the dialog when user presses "set" button.
 		// tags:
 		//		private
-		//TODO: prevent closing popup if the text is empty
+		
+		// TODO: prevent closing popup if the text is empty
 		this._onCloseDialog();
 		if(has("ie") < 9){ //see #4151
 			var sel = rangeapi.getSelection(this.editor.window);
@@ -445,7 +446,7 @@ var ImgLinkDialog = declare("dijit._editor.plugins.ImgLinkDialog", [LinkDialog],
 	// linkDialogTemplate: [protected] String
 	//		Over-ride for template since img dialog doesn't need target that anchor tags may.
 	linkDialogTemplate: [
-		"<table><tr><td>",
+		"<table role='presentation'><tr><td>",
 		"<label for='${id}_urlInput'>${url}</label>",
 		"</td><td>",
 		"<input dojoType='dijit.form.ValidationTextBox' regExp='${urlRegExp}' " +
