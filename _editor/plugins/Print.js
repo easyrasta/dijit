@@ -28,6 +28,7 @@ var Print = declare("dijit._editor.plugins.Print",_Plugin,{
 			editor = this.editor;
 		this.button = new Button({
 			label: strings["print"],
+			ownerDocument: editor.ownerDocument,
 			dir: editor.dir,
 			lang: editor.lang,
 			showLabel: false,
@@ -37,7 +38,7 @@ var Print = declare("dijit._editor.plugins.Print",_Plugin,{
 		});
 	},
 
-	setEditor: function(/*dijit.Editor*/ editor){
+	setEditor: function(/*dijit/Editor*/ editor){
 		// summary:
 		//		Tell the plugin which Editor it is associated with.
 		// editor: Object

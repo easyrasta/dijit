@@ -7,6 +7,7 @@ define([
 	"dojo/_base/event", // event.stop
 	"dojo/i18n", // i18n.getLocalization
 	"dojo/_base/lang", // lang.hitch
+	"dojo/sniff", // has("ie")
 	"./_FormSelectWidget",
 	"../_HasDropDown",
 	"../Menu",
@@ -15,7 +16,7 @@ define([
 	"../Tooltip",
 	"dojo/text!./templates/Select.html",
 	"dojo/i18n!./nls/validate"
-], function(array, declare, domAttr, domClass, domGeometry, event, i18n, lang,
+], function(array, declare, domAttr, domClass, domGeometry, event, i18n, lang, has,
 			_FormSelectWidget, _HasDropDown, Menu, MenuItem, MenuSeparator, Tooltip, template){
 
 // module:
@@ -112,6 +113,8 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 
 	templateString: template,
 
+	_buttonInputDisabled: has("ie") ? "disabled" : "", // allows IE to disallow focus, but Firefox cannot be disabled for mousedown events
+
 	// required: Boolean
 	//		Can be true or false, default is false.
 	required: false,
@@ -154,13 +157,13 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		domClass.add(this.dropDown.domNode, this.baseClass + "Menu");
 	},
 
-	_getMenuItemForOption: function(/*dijit.form.__SelectOption*/ option){
+	_getMenuItemForOption: function(/*_FormSelectWidget.__SelectOption*/ option){
 		// summary:
 		//		For the given option, return the menu item that should be
 		//		used to display it.  This can be overridden as needed
 		if(!option.value && !option.label){
 			// We are a separator (no label set for it)
-			return new MenuSeparator();
+			return new MenuSeparator({ownerDocument: this.ownerDocument});
 		}else{
 			// Just a regular menu option
 			var click = lang.hitch(this, "_setValueAttr", option);
@@ -168,6 +171,7 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 				option: option,
 				label: option.label || this.emptyLabel,
 				onClick: click,
+				ownerDocument: this.ownerDocument,
 				dir: this.dir,
 				disabled: option.disabled || false
 			});
@@ -176,7 +180,7 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		}
 	},
 
-	_addOptionItem: function(/*dijit.form.__SelectOption*/ option){
+	_addOptionItem: function(/*_FormSelectWidget.__SelectOption*/ option){
 		// summary:
 		//		For the given option, add an option to our dropdown.
 		//		If the option doesn't have a value, then a separator is added
@@ -214,7 +218,10 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 				// Drop down menu is blank but add one blank entry just so something appears on the screen
 				// to let users know that they are no choices (mimicing native select behavior)
 				array.forEach(this._getChildren(), function(child){ child.destroyRecursive(); });
-				var item = new MenuItem({ label: this.emptyLabel });
+				var item = new MenuItem({
+					ownerDocument: this.ownerDocument,
+					label: this.emptyLabel
+				});
 				this.dropDown.addChild(item);
 			}
 		}else{
@@ -230,21 +237,32 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		}
 	},
 
+	_refreshState: function(){
+		if(this._started){
+			this.validate(this.focused);
+		}
+	},
+
+	startup: function(){
+		this.inherited(arguments);
+		this._refreshState(); // after all _set* methods have run
+	},
+
 	_setValueAttr: function(value){
 		this.inherited(arguments);
 		domAttr.set(this.valueNode, "value", this.get("value"));
-		this.validate(this.focused);	// to update this.state
+		this._refreshState();	// to update this.state
 	},
 
 	_setDisabledAttr: function(/*Boolean*/ value){
 		this.inherited(arguments);
-		this.validate(this.focused);	// to update this.state
+		this._refreshState();	// to update this.state
 	},
 
 	_setRequiredAttr: function(/*Boolean*/ value){
 		this._set("required", value);
 		this.focusNode.setAttribute("aria-required", value);
-		this.validate(this.focused);	// to update this.state
+		this._refreshState();	// to update this.state
 	},
 
 	_setOptionsAttr: function(/*Array*/ options){
@@ -269,7 +287,7 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		//		set the value.
 
 		var isValid = this.disabled || this.isValid(isFocused);
-		this._set("state", isValid ? "" : "Incomplete");
+		this._set("state", isValid ? "" : (this._hasBeenBlurred ? "Error" : "Incomplete"));
 		this.focusNode.setAttribute("aria-invalid", isValid ? "false" : "true");
 		var message = isValid ? "" : this._missingMsg;
 		if(message && this.focused && this._hasBeenBlurred){
@@ -293,7 +311,7 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		//		Overridden so that the state will be cleared.
 		this.inherited(arguments);
 		Tooltip.hide(this.domNode);
-		this.validate(this.focused);	// to update this.state
+		this._refreshState();	// to update this.state
 	},
 
 	postMixInProperties: function(){
@@ -310,6 +328,28 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 		this.inherited(arguments);
 
 		this.connect(this.domNode, "onselectstart", event.stop);
+
+		if(has("ie") < 9){
+			// IE INPUT tag fontFamily has to be set directly using STYLE
+			// the defer gives IE a chance to render the TextBox and to deal with font inheritance
+			this.defer(function(){
+				try{
+					var s = domStyle.getComputedStyle(this.domNode); // can throw an exception if widget is immediately destroyed
+					if(s){
+						var ff = s.fontFamily;
+						if(ff){
+							var inputs = this.domNode.getElementsByTagName("INPUT");
+							if(inputs){
+								for(var i=0; i < inputs.length; i++){
+									inputs[i].style.fontFamily = ff;
+								}
+							}
+						}
+					}
+				}catch(e){/*when used in a Dialog, and this is called before the dialog is
+				 shown, s.fontFamily would trigger "Invalid Argument" error.*/}
+			});
+		}
 	},
 
 	_setStyleAttr: function(/*String||Object*/ value){
@@ -357,6 +397,7 @@ var Select = declare("dijit.form.Select", [_FormSelectWidget, _HasDropDown], {
 	_onBlur: function(){
 		Tooltip.hide(this.domNode);
 		this.inherited(arguments);
+		this.validate(false);
 	}
 });
 

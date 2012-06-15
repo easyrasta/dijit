@@ -82,6 +82,7 @@ var ViewSource = declare("dijit._editor.plugins.ViewSource",_Plugin, {
 			editor = this.editor;
 		this.button = new ToggleButton({
 			label: strings["viewSource"],
+			ownerDocument: editor.ownerDocument,
 			dir: editor.dir,
 			lang: editor.lang,
 			showLabel: false,
@@ -107,7 +108,7 @@ var ViewSource = declare("dijit._editor.plugins.ViewSource",_Plugin, {
 	},
 
 
-	setEditor: function(/*dijit.Editor*/ editor){
+	setEditor: function(/*dijit/Editor*/ editor){
 		// summary:
 		//		Tell the plugin which Editor it is associated with.
 		// editor: Object

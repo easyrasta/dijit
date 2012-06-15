@@ -208,13 +208,17 @@ return declare("dijit._WidgetBase", [Stateful, Destroyable], {
 	//		is null for widgets that don't, like TextBox.
 	containerNode: null,
 
-/*=====
 	// ownerDocument: [const] Document?
 	//		The document this widget belongs to.  If not specified to constructor, will default to
 	//		srcNodeRef.ownerDocument, or if no sourceRef specified, then to dojo/_base/window::doc
 	ownerDocument: null,
+	_setOwnerDocumentAttr: function(val){
+		// this setter is merely to avoid automatically trying to set this.domNode.ownerDocument
+		this._set("ownerDocument", val);
+	},
 
-	// _started: Boolean
+/*=====
+	// _started: [readonly] Boolean
 	//		startup() has completed.
 	_started: false,
 =====*/
@@ -880,7 +884,7 @@ return declare("dijit._WidgetBase", [Stateful, Destroyable], {
 		// summary:
 		//		Returns all the widgets contained by this, i.e., all widgets underneath this.containerNode.
 		//		Does not return nested widgets, nor widgets that are part of this widget's template.
-		return this.containerNode ? registry.findWidgets(this.containerNode) : []; // dijit._Widget[]
+		return this.containerNode ? registry.findWidgets(this.containerNode) : []; // dijit/_WidgetBase[]
 	},
 
 	getParent: function(){
@@ -975,7 +979,7 @@ return declare("dijit._WidgetBase", [Stateful, Destroyable], {
 		return this.focus && (domStyle.get(this.domNode, "display") != "none");
 	},
 
-	placeAt: function(/* String|DomNode|_Widget */ reference, /* String?|Int? */ position){
+	placeAt: function(/* String|DomNode|_Widget */ reference, /* String|Int? */ position){
 		// summary:
 		//		Place this widget somewhere in the DOM based
 		//		on standard domConstruct.place() conventions.
@@ -993,7 +997,7 @@ return declare("dijit._WidgetBase", [Stateful, Destroyable], {
 		//		If reference is a DOMNode (or id matching a DOMNode but not a widget),
 		//		the position argument can be a numeric index or a string
 		//		"first", "last", "before", or "after", same as dojo/dom-construct::place().
-		// returns: dijit._WidgetBase
+		// returns: dijit/_WidgetBase
 		//		Provides a useful return of the newly created dijit._Widget instance so you
 		//		can "chain" this function by instantiating, placing, then saving the return value
 		//		to a variable.
